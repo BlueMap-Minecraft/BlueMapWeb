@@ -5,3 +5,5 @@
 build
 doc
 node_modules
+
+public/js
