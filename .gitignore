@@ -1,0 +1,7 @@
+.classpath
+.project
+.idea
+
+build
+doc
+node_modules

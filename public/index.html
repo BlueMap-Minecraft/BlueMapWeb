@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BlueMap Lib Test</title>
+    <link rel="shortcut icon" href="favicon.png">
+</head>
+<body style="margin: 0; padding: 0;">
+    <div id="map-container" style="position: absolute; width: 96%; height: 90%; margin: 2%;"></div>
+
+    <script type="text/javascript" src="js/three.js"></script>
+    <script type="text/javascript" src="js/hammer.js"></script>
+    <script type="text/javascript" src="js/bluemap.js"></script>
+
+    <script type="text/javascript">
+        let bluemap = new BlueMap.MapViewer(document.getElementById("map-container"));
+
+        // show stats panel
+        bluemap.stats.showPanel(1);
+
+        // load map
+        let maps = [];
+        BlueMap.loadMaps("data/", bluemap.events).then(loadedMaps => {
+            maps = loadedMaps;
+            bluemap.setMap(maps[0]);
+        });
+    </script>
+</body>
+</html>

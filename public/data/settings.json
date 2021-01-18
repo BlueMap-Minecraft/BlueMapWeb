@@ -1,0 +1,49 @@
+{
+  "useCookies": true,
+  "maps": {
+    "world": {
+      "enabled": true,
+      "hires": {
+        "tileSize": {
+          "x": 32,
+          "z": 32
+        },
+        "scale": {
+          "x": 1,
+          "z": 1
+        },
+        "translate": {
+          "x": 2,
+          "z": 2
+        }
+      },
+      "lowres": {
+        "tileSize": {
+          "x": 400,
+          "z": 400
+        },
+        "scale": {
+          "x": 8,
+          "z": 8
+        },
+        "translate": {
+          "x": 4,
+          "z": 4
+        }
+      },
+      "startPos": {
+        "x": 154,
+        "z": 32
+      },
+      "ordinal": 0,
+      "skyColor": {
+        "r": 0.49019608,
+        "g": 0.67058825,
+        "b": 1.0
+      },
+      "ambientLight": 0.0,
+      "name": "World",
+	  "world": "118a8ec2-ccb1-4e84-be88-1ff568e413ca"
+    }
+  }
+}
