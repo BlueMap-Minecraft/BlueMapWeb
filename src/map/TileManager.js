@@ -51,7 +51,7 @@ export class TileManager {
         this.loadTimeout = null;
 
         //map of loaded tiles
-        this.tiles = {};
+        this.tiles = new Map();
 
         // a canvas that keeps track of the loaded tiles, used for shaders
         this.tileMap = new TileMap(TileManager.tileMapSize, TileManager.tileMapSize);
@@ -70,15 +70,11 @@ export class TileManager {
             this.removeFarTiles();
 
             this.tileMap.setAll(TileMap.EMPTY);
-            let keys = Object.keys(this.tiles);
-            for (let i = 0; i < keys.length; i++) {
-                if (!this.tiles.hasOwnProperty(keys[i])) continue;
-
-                let tile = this.tiles[keys[i]];
+            this.tiles.forEach(tile => {
                 if (!tile.loading) {
                     this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
                 }
-            }
+            });
         }
 
         this.loadCloseTiles();
@@ -90,11 +86,7 @@ export class TileManager {
     }
 
     removeFarTiles() {
-        let keys = Object.keys(this.tiles);
-        for (let i = 0; i < keys.length; i++) {
-            if (!this.tiles.hasOwnProperty(keys[i])) continue;
-
-            let tile = this.tiles[keys[i]];
+        this.tiles.forEach((tile, hash, map) => {
             if (
                 tile.x + this.viewDistanceX < this.centerTile.x ||
                 tile.x - this.viewDistanceX > this.centerTile.x ||
@@ -102,22 +94,18 @@ export class TileManager {
                 tile.z - this.viewDistanceZ > this.centerTile.y
             ) {
                 tile.unload();
-                delete this.tiles[keys[i]];
+                map.delete(hash);
             }
-        }
+        });
     }
 
     removeAllTiles() {
         this.tileMap.setAll(TileMap.EMPTY);
 
-        let keys = Object.keys(this.tiles);
-        for (let i = 0; i < keys.length; i++) {
-            if (!this.tiles.hasOwnProperty(keys[i])) continue;
-
-            let tile = this.tiles[keys[i]];
+        this.tiles.forEach(tile => {
             tile.unload();
-            delete this.tiles[keys[i]];
-        }
+        });
+        this.tiles.clear();
     }
 
     loadCloseTiles = () => {
@@ -166,13 +154,13 @@ export class TileManager {
 
         let tileHash = hashTile(x, z);
 
-        let tile = this.tiles[tileHash];
+        let tile = this.tiles.get(tileHash);
         if (tile !== undefined) return false;
 
         this.currentlyLoading++;
 
         tile = new Tile(x, z, this.handleLoadedTile, this.handleUnloadedTile);
-        this.tiles[tileHash] = tile;
+        this.tiles.set(tileHash, tile);
         tile.load(this.tileLoader)
             .then(() => {
                 this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);

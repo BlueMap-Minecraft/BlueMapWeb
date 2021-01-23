@@ -293,10 +293,10 @@ export class Map {
 		this.raycaster.layers.enableAll();
 
 		let hiresTileHash = hashTile(Math.floor((x - this.hires.translate.x) / this.hires.tileSize.x), Math.floor((z - this.hires.translate.z) / this.hires.tileSize.z));
-		let tile = this.hiresTileManager.tiles[hiresTileHash];
+		let tile = this.hiresTileManager.tiles.get(hiresTileHash);
 		if (!tile || !tile.model) {
 			let lowresTileHash = hashTile(Math.floor((x - this.lowres.translate.x) / this.lowres.tileSize.x), Math.floor((z - this.lowres.translate.z) / this.lowres.tileSize.z));
-			tile = this.lowresTileManager.tiles[lowresTileHash];
+			tile = this.lowresTileManager.tiles.get(lowresTileHash);
 		}
 
 		if (!tile || !tile.model){
