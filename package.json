@@ -37,7 +37,7 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "start": "npm run dev-libs && concurrently --names \"ROLLUP,SERVER\" -c \"bgBlue.bold,bgGreen.bold\" \"rollup -c './rollup-test.config.js' -o './public/js/bluemap.js' -w -m inline\" \"http-server -c-1 -p 8080\"",
+    "start": "npm run dev-libs && concurrently --names \"ROLLUP,SERVER\" -c \"bgBlue.bold,bgGreen.bold\" \"rollup -c './rollup-test.config.js' -o './public/js/bluemap.js' -w -m inline\" \"http-server -g -b -c-1 -p 8080\"",
     "dev-libs": "copyfiles -f node_modules/three/build/three.js node_modules/hammerjs/hammer.js public/js"
   }
 }
