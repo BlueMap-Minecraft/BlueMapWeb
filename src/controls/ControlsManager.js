@@ -1,8 +1,13 @@
 import {MathUtils, Vector3} from "three";
 import {dispatchEvent} from "../util/Utils";
+import {Map} from "../map/Map";
 
 export class ControlsManager {
 
+	/**
+	 * @param mapViewer {MapViewer}
+	 * @param camera {THREE.Camera}
+	 */
 	constructor(mapViewer, camera) {
 		Object.defineProperty( this, 'isControlsManager', { value: true } );
 
@@ -26,6 +31,10 @@ export class ControlsManager {
 		this.updateCamera();
 	}
 
+	/**
+	 * @param deltaTime {number}
+	 * @param map {Map}
+	 */
 	update(deltaTime, map) {
 		if (deltaTime > 50) deltaTime = 50; // assume min 20 UPS
 
@@ -101,78 +110,133 @@ export class ControlsManager {
 		this.valueChanged = true;
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get x() {
 		return this.positionValue.x;
 	}
 
+	/**
+	 * @param x {number}
+	 */
 	set x(x) {
 		this.positionValue.x = x;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get y() {
 		return this.positionValue.y;
 	}
 
+	/**
+	 * @param y {number}
+	 */
 	set y(y) {
 		this.positionValue.y = y;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get z() {
 		return this.positionValue.z;
 	}
 
+	/**
+	 * @param z {number}
+	 */
 	set z(z) {
 		this.positionValue.z = z;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {Vector3}
+	 */
 	get position() {
 		return this.positionValue;
 	}
 
+	/**
+	 * @param position {Vector3}
+	 */
 	set position(position) {
 		this.position.copy(position);
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get rotation() {
 		return this.rotationValue;
 	}
 
+	/**
+	 * @param rotation {number}
+	 */
 	set rotation(rotation) {
 		this.rotationValue = rotation;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get angle() {
 		return this.angleValue;
 	}
 
+	/**
+	 * @param angle {number}
+	 */
 	set angle(angle) {
 		this.angleValue = angle;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get distance() {
 		return this.distanceValue;
 	}
 
+	/**
+	 * @param distance {number}
+	 */
 	set distance(distance) {
 		this.distanceValue = distance;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get ortho() {
 		return this.orthoValue;
 	}
 
+	/**
+	 * @param ortho {number}
+	 */
 	set ortho(ortho) {
 		this.orthoValue = ortho;
 		this.handleValueChange();
 	}
 
+	/**
+	 * @param controls {{
+	 * 		start: function(controls: ControlsManager),
+	 * 		stop: function(),
+	 * 		update: function(deltaTime: number, map: Map)
+	 * 	}}
+	 */
 	set controls(controls) {
 		if (this.controlsValue && typeof this.controlsValue.stop === "function")
 			this.controlsValue.stop();
@@ -183,6 +247,13 @@ export class ControlsManager {
 			this.controlsValue.start(this);
 	}
 
+	/**
+	 * @returns {{
+	 * 		start: function(controls: ControlsManager),
+	 * 		stop: function(),
+	 * 		update: function(deltaTime: number, map: Map)
+	 * 	}}
+	 */
 	get controls() {
 		return this.controlsValue;
 	}

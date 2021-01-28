@@ -44,12 +44,11 @@ varying vec3 vWorldPosition;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying vec3 vColor;
+varying float vDistance;
 
 void main() {
-	float depth = gl_FragCoord.z / gl_FragCoord.w;
-
 	//discard if hires tile is loaded at that position
-	if (!isOrthographic && depth < 1900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r >= 1.0) discard;
+	if (vDistance < 1900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r >= 1.0) discard;
 	
 	vec4 color = vec4(vColor, 1.0);
 

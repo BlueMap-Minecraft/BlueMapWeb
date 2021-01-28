@@ -33,6 +33,9 @@ var CSS2DObject = function ( element ) {
 
     } );
 
+    this.element.addEventListener("click", event => this.onClick(event));
+    this.element.addEventListener("touch", event => this.onClick(event));
+
 };
 
 CSS2DObject.prototype = Object.create( Object3D.prototype );
@@ -82,7 +85,7 @@ var CSS2DRenderer = function () {
 
     };
 
-    var renderObject = function ( object, scene, camera ) {
+    var renderObject = function ( object, scene, camera, parentVisible ) {
 
         if ( object instanceof CSS2DObject ) {
 
@@ -99,7 +102,7 @@ var CSS2DRenderer = function () {
             element.style.oTransform = style;
             element.style.transform = style;
 
-            element.style.display = ( object.visible && vector.z >= - 1 && vector.z <= 1 ) ? '' : 'none';
+            element.style.display = ( parentVisible && object.visible && vector.z >= - 1 && vector.z <= 1 && element.style.opacity > 0 ) ? '' : 'none';
 
             var objectData = {
                 distanceToCameraSquared: getDistanceToSquared( camera, object )
@@ -119,7 +122,7 @@ var CSS2DRenderer = function () {
 
         for ( var i = 0, l = object.children.length; i < l; i ++ ) {
 
-            renderObject( object.children[ i ], scene, camera );
+            renderObject( object.children[ i ], scene, camera, parentVisible && object.visible );
 
         }
 
@@ -184,7 +187,7 @@ var CSS2DRenderer = function () {
         viewMatrix.copy( camera.matrixWorldInverse );
         viewProjectionMatrix.multiplyMatrices( camera.projectionMatrix, viewMatrix );
 
-        renderObject( scene, scene, camera );
+        renderObject( scene, scene, camera, true );
         zOrder( scene );
 
     };

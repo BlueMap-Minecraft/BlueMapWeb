@@ -1,153 +1,271 @@
 import {Marker} from "./Marker";
-import {
-    Color,
-    Object3D,
-    Vector3,
-} from "three";
+import {Color} from "three";
 import {LineMaterial} from "../util/lines/LineMaterial";
 import {LineGeometry} from "../util/lines/LineGeometry";
 import {Line2} from "../util/lines/Line2";
+import {deepEquals} from "../util/Utils";
+import {ObjectMarker} from "./ObjectMarker";
 
-export class LineMarker extends Marker {
+export class LineMarker extends ObjectMarker {
 
-    constructor(markerSet, id, parentObject) {
-        super(markerSet, id);
+    /**
+     * @param markerId {string}
+     */
+    constructor(markerId) {
+        super(markerId);
         Object.defineProperty(this, 'isLineMarker', {value: true});
-        Object.defineProperty(this, 'type', {value: "line"});
+        this.markerType = "line";
 
-        let lineColor = Marker.normalizeColor({});
-        let lineWidth = 2;
-        let depthTest = false;
+        this.line = new LineMarkerLine([0, 0, 0]);
 
-        this._lineOpacity = 1;
+        this.add(this.line);
 
-        this._markerObject = new Object3D();
-        this._markerObject.position.copy(this.position);
-        parentObject.add(this._markerObject);
-
-        this._markerLineMaterial = new LineMaterial({
-            color: new Color(lineColor.rgb),
-            opacity: lineColor.a,
-            transparent: true,
-            linewidth: lineWidth,
-            depthTest: depthTest,
-            vertexColors: false,
-            dashed: false
-        });
-        this._markerLineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+        this._markerData = {};
     }
 
-    update(markerData) {
-        super.update(markerData);
+    /**
+     * @param line {number[] | THREE.Vector3[] | THREE.Curve}
+     */
+    setLine(line) {
+        /** @type {number[]} */
+        let points;
 
-        if (markerData.lineColor) this.lineColor = markerData.lineColor;
-
-        this.lineWidth = markerData.lineWidth ? parseFloat(markerData.lineWidth) : 2;
-        this.depthTest = !!markerData.depthTest;
-
-        let points = [];
-        if (Array.isArray(markerData.line)) {
-            markerData.line.forEach(point => {
-                points.push(new Vector3(parseFloat(point.x), parseFloat(point.y), parseFloat(point.z)));
-            });
+        if (line.type === 'Curve' || line.type === 'CurvePath') {
+            line = line.getPoints(5);
         }
-        this.line = points;
+
+        if (Array.isArray(line)) {
+            if (line.length === 0){
+                points = [];
+            } else if (line[0].isVector3) {
+                points = [];
+                line.forEach(point => {
+                    points.push(point.x, point.y, point.z);
+                });
+            } else {
+                points = line;
+            }
+        } else {
+            throw new Error("Invalid argument type!");
+        }
+
+        this.line.updateGeometry(points);
     }
 
-    _onBeforeRender(renderer, scene, camera) {
-        super._onBeforeRender(renderer, scene, camera);
+    /**
+     * @typedef {{r: number, g: number, b: number, a: number}} ColorLike
+     */
 
-        this._markerLineMaterial.opacity = this._lineOpacity * this._opacity;
+    /**
+     * @param markerData {{
+     *      position: {x: number, y: number, z: number},
+     *      label: string,
+     *      line: {x: number, y: number, z: number}[],
+     *      link: string,
+     *      newTab: boolean,
+     *      depthTest: boolean,
+     *      lineWidth: number,
+     *      lineColor: ColorLike,
+     *      minDistance: number,
+     *      maxDistance: number
+     *      }}
+     */
+    updateFromData(markerData) {
+        super.updateFromData(markerData);
+
+        // update shape only if needed, based on last update-data
+        if (
+            !this._markerData.line || !deepEquals(markerData.line, this._markerData.line) ||
+            !this._markerData.position || !deepEquals(markerData.position, this._markerData.position)
+        ){
+            this.setLine(this.createPointsFromData(markerData.line));
+        }
+
+        // update depthTest
+        this.line.depthTest = !!markerData.depthTest;
+
+        // update border-width
+        this.line.linewidth = markerData.lineWidth !== undefined ? markerData.lineWidth : 2;
+
+        // update line-color
+        let lc = markerData.lineColor || {};
+        this.line.color.setRGB((lc.r || 0) / 255, (lc.g || 0) / 255, (lc.b || 0) / 255);
+        this.line.opacity = lc.a || 0;
+
+        // update min/max distances
+        let minDist = markerData.minDistance || 0;
+        let maxDist = markerData.maxDistance !== undefined ? markerData.maxDistance : Number.MAX_VALUE;
+        this.line.fadeDistanceMin = minDist;
+        this.line.fadeDistanceMax = maxDist;
+
+        // save used marker data for next update
+        this._markerData = markerData;
     }
 
     dispose() {
-        this._markerObject.parent.remove(this._markerObject);
-        this._markerObject.children.forEach(child => {
-            if (child.geometry && child.geometry.isGeometry) child.geometry.dispose();
-        });
-        this._markerObject.clear();
-
-        this._markerLineMaterial.dispose();
-
         super.dispose();
+
+        this.line.dispose();
     }
 
     /**
-     * Sets the line-color
-     *
-     * color-object format:
-     * <code><pre>
-     * {
-     *     r: 0,    // int 0-255 red
-     *     g: 0,    // int 0-255 green
-     *     b: 0,    // int 0-255 blue
-     *     a: 0     // float 0-1 alpha
-     * }
-     * </pre></code>
-     *
-     * @param color {Object}
+     * @private
+     * Creates a shape from a data object, usually parsed json from a markers.json
+     * @param shapeData {object}
+     * @returns {number[]}
      */
-    set lineColor(color) {
-        color = Marker.normalizeColor(color);
+    createPointsFromData(shapeData) {
+        /** @type {number[]} **/
+        let points = [];
 
-        this._markerLineMaterial.color.setHex(color.rgb);
-        this._lineOpacity = color.a;
-        this._markerLineMaterial.needsUpdate = true;
+        if (Array.isArray(shapeData)){
+            shapeData.forEach(point => {
+                let x = (point.x || 0) - this.position.x;
+                let y = (point.y || 0) - this.position.y;
+                let z = (point.z || 0) - this.position.z;
+
+                points.push(x, y, z);
+            });
+        }
+
+        return points;
+    }
+
+}
+
+class LineMarkerLine extends Line2 {
+
+    /**
+     * @param points {number[]}
+     */
+    constructor(points) {
+        let geometry = new LineGeometry();
+        geometry.setPositions(points);
+
+        let material = new LineMaterial({
+            color: new Color(),
+            opacity: 0,
+            transparent: true,
+            linewidth: 1,
+            depthTest: true,
+            vertexColors: false,
+            dashed: false,
+        });
+        material.uniforms.fadeDistanceMin = { value: 0 };
+        material.uniforms.fadeDistanceMax = { value: Number.MAX_VALUE };
+
+        material.resolution.set(window.innerWidth, window.innerHeight);
+
+        super(geometry, material);
+
+        this.computeLineDistances();
     }
 
     /**
-     * Sets the width of the marker-line
+     * @returns {Color}
+     */
+    get color(){
+        return this.material.color;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get opacity() {
+        return this.material.opacity;
+    }
+
+    /**
+     * @param opacity {number}
+     */
+    set opacity(opacity) {
+        this.material.opacity = opacity;
+        this.visible = opacity > 0;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get linewidth() {
+        return this.material.linewidth;
+    }
+
+    /**
      * @param width {number}
      */
-    set lineWidth(width) {
-        this._markerLineMaterial.linewidth = width;
-        this._markerLineMaterial.needsUpdate = true;
+    set linewidth(width) {
+        this.material.linewidth = width;
     }
 
     /**
-     * Sets if this marker can be seen through terrain
+     * @returns {boolean}
+     */
+    get depthTest() {
+        return this.material.depthTest;
+    }
+
+    /**
      * @param test {boolean}
      */
     set depthTest(test) {
-        this._markerLineMaterial.depthTest = test;
-        this._markerLineMaterial.needsUpdate = true;
-    }
-
-    get depthTest() {
-        return this._markerLineMaterial.depthTest;
+        this.material.depthTest = test;
     }
 
     /**
-     * Sets the points for the shape of this marker.
-     * @param points {Vector3[]}
+     * @returns {number}
      */
-    set line(points) {
-        // remove old marker
-        this._markerObject.children.forEach(child => {
-            if (child.geometry && child.geometry.isGeometry) child.geometry.dispose();
-        });
-        this._markerObject.clear();
+    get fadeDistanceMin() {
+        return this.material.uniforms.fadeDistanceMin.value;
+    }
 
-        if (points.length < 3) return;
+    /**
+     * @param min {number}
+     */
+    set fadeDistanceMin(min) {
+        this.material.uniforms.fadeDistanceMin.value = min;
+    }
 
-        this._markerObject.position.copy(this.position);
+    /**
+     * @returns {number}
+     */
+    get fadeDistanceMax() {
+        return this.material.uniforms.fadeDistanceMax.value;
+    }
 
-        // line
-        let points3d = [];
-        points.forEach(point => points3d.push(point.x, point.y, point.z));
-        let lineGeo = new LineGeometry();
-        lineGeo.setPositions(points3d);
-        lineGeo.translate(-this.position.x, -this.position.y, -this.position.z);
-        let line = new Line2(lineGeo, this._markerLineMaterial);
-        line.computeLineDistances();
+    /**
+     * @param max {number}
+     */
+    set fadeDistanceMax(max) {
+        this.material.uniforms.fadeDistanceMax.value = max;
+    }
 
-        line.onBeforeRender = (renderer, camera, scene) => {
-            this._onBeforeRender(renderer, camera, scene);
-            renderer.getSize(line.material.resolution);
+    onClick(event) {
+        if (event.intersection) {
+            if (event.intersection.distance > this.fadeDistanceMax) return false;
+            if (event.intersection.distance < this.fadeDistanceMin) return false;
         }
 
-        line.marker = this;
-        this._markerObject.add(line);
+        return super.onClick(event);
+    }
+
+    /**
+     * @param points {number[]}
+     */
+    updateGeometry(points) {
+        this.geometry.setPositions(points);
+        this.computeLineDistances();
+    }
+
+    /**
+     * @param renderer {THREE.WebGLRenderer}
+     */
+    onBeforeRender(renderer) {
+        renderer.getSize(this.material.resolution);
+    }
+
+    dispose() {
+        this.geometry.dispose();
+        this.material.dispose();
     }
 
 }

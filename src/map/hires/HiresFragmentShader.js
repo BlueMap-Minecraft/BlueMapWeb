@@ -32,13 +32,14 @@ uniform float sunlightStrength;
 uniform float ambientLight;
 
 varying vec3 vPosition;
-varying vec3 vWorldPosition;
+//varying vec3 vWorldPosition;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying vec3 vColor;
 varying float vAo;
 varying float vSunlight;
 varying float vBlocklight;
+//varying float vDistance;
 
 void main() {
 	vec4 color = texture(textureImage, vUv);

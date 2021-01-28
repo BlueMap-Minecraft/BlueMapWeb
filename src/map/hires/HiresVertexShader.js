@@ -33,29 +33,30 @@ attribute float sunlight;
 attribute float blocklight;
 
 varying vec3 vPosition;
-varying vec3 vWorldPosition;
+//varying vec3 vWorldPosition;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying vec3 vColor;
 varying float vAo;
 varying float vSunlight;
 varying float vBlocklight;
+//varying float vDistance;
 
 void main() {
+	vec4 worldPos = modelMatrix * vec4(position, 1);
+	vec4 viewPos = viewMatrix * worldPos;
+
 	vPosition = position;
-	vWorldPosition = (modelMatrix * vec4(position, 1)).xyz;
+	//vWorldPosition = worldPos.xyz;
 	vNormal = normal;
 	vUv = uv;
 	vColor = color;
 	vAo = ao;
 	vSunlight = sunlight;
 	vBlocklight = blocklight;
+	//vDistance = -viewPos.z
 	
-	gl_Position = 
-		projectionMatrix *
-		viewMatrix *
-		modelMatrix *
-		vec4(position, 1);
+	gl_Position = projectionMatrix * viewPos;
 	
 	${ShaderChunk.logdepthbuf_vertex} 
 }

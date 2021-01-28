@@ -1,4 +1,4 @@
-import {FileLoader} from "three";
+import {FileLoader, Object3D} from "three";
 import {Map} from "./map/Map";
 
 export { MapViewer } from "./MapViewer";
@@ -7,8 +7,8 @@ export * from "./util/Utils";
 /**
  * Loads and returns a promise with an array of Maps loaded from that root-path.<br>
  * <b>DONT FORGET TO dispose() ALL MAPS RETURNED BY THIS METHOD IF YOU DONT NEED THEM ANYMORE!</b>
- * @param dataUrl
- * @param events
+ * @param dataUrl {string}
+ * @param events {EventTarget}
  * @returns {Promise<Map[]>}
  */
 export const loadMaps = (dataUrl, events = null) => {
@@ -50,3 +50,19 @@ export const loadMaps = (dataUrl, events = null) => {
     });
 
 }
+
+/**
+ * @param event {object}
+ * @return {boolean} - whether the event has been consumed (true) or not (false)
+ */
+Object3D.prototype.onClick = function(event) {
+
+    if (this.parent){
+        if (!Array.isArray(event.eventStack)) event.eventStack = [];
+        event.eventStack.push(this);
+
+        return this.parent.onClick(event);
+    }
+
+    return false;
+};

@@ -25,9 +25,16 @@
 
 export class Tile {
 
+    /**
+     * @param x {number}
+     * @param z {number}
+     * @param onLoad {function(Tile)}
+     * @param onUnload {function(Tile)}
+     */
     constructor(x, z, onLoad, onUnload) {
         Object.defineProperty( this, 'isTile', { value: true } );
 
+        /** @type {THREE.Mesh} */
         this.model = null;
 
         this.onLoad = onLoad;
@@ -40,8 +47,12 @@ export class Tile {
         this.loading = false;
     }
 
+    /**
+     * @param tileLoader {TileLoader}
+     * @returns {Promise<void>}
+     */
     load(tileLoader) {
-        if (this.loading) return;
+        if (this.loading) return Promise.reject("tile is already loading!");
         this.loading = true;
 
         this.unload();
@@ -72,6 +83,9 @@ export class Tile {
         }
     }
 
+    /**
+     * @returns {boolean}
+     */
     get loaded() {
         return !!this.model;
     }

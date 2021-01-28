@@ -1,15 +1,20 @@
 import {
-	ClampToEdgeWrapping,
+	ClampToEdgeWrapping, Color,
 	FileLoader, FrontSide, NearestFilter, NearestMipMapLinearFilter, Raycaster,
 	Scene, ShaderMaterial, Texture, Vector2, Vector3, VertexColors
 } from "three";
 import {alert, dispatchEvent, hashTile, stringToImage} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
-import {MarkerManager} from "../markers/MarkerManager";
+import {MarkerFileManager} from "../markers/MarkerFileManager";
 
 export class Map {
 
+	/**
+	 * @param id {string}
+	 * @param dataUrl {string}
+	 * @param events {EventTarget}
+	 */
 	constructor(id, dataUrl, events = null) {
 		Object.defineProperty( this, 'isMap', { value: true } );
 
@@ -21,7 +26,7 @@ export class Map {
 		this.world = "-";
 
 		this.startPos = {x: 0, z: 0};
-		this.skyColor = {r: 0, g: 0, b: 0};
+		this.skyColor = new Color();
 		this.ambientLight = 0;
 
 		this.hires = {
@@ -40,18 +45,26 @@ export class Map {
 
 		this.raycaster = new Raycaster();
 
+		/** @type {ShaderMaterial[]} */
 		this.hiresMaterial = null;
+		/** @type {ShaderMaterial} */
 		this.lowresMaterial = null;
+		/** @type {Texture[]} */
 		this.loadedTextures = [];
 
+		/** @type {TileManager} */
 		this.hiresTileManager = null;
+		/** @type {TileManager} */
 		this.lowresTileManager = null;
-
-		this.markerManager = new MarkerManager(this.dataUrl + "../markers.json", this.id, this.events);
 	}
 
 	/**
 	 * Loads textures and materials for this map so it is ready to load map-tiles
+	 * @param hiresVertexShader {string}
+	 * @param hiresFragmentShader {string}
+	 * @param lowresVertexShader {string}
+	 * @param lowresFragmentShader {string}
+	 * @param uniforms {object}
 	 * @returns {Promise<void>}
 	 */
 	load(hiresVertexShader, hiresFragmentShader, lowresVertexShader, lowresFragmentShader, uniforms) {
@@ -59,7 +72,6 @@ export class Map {
 
 		let settingsFilePromise = this.loadSettingsFile();
 		let textureFilePromise = this.loadTexturesFile();
-		let markerUpdatePromise = this.markerManager.update();
 
 		this.lowresMaterial = this.createLowresMaterial(lowresVertexShader, lowresFragmentShader, uniforms);
 
@@ -69,7 +81,11 @@ export class Map {
 				this.world = worldSettings.world ? worldSettings.world : this.world;
 
 				this.startPos = {...this.startPos, ...worldSettings.startPos};
-				this.skyColor = {...this.skyColor, ...worldSettings.skyColor};
+				this.skyColor.setRGB(
+					worldSettings.skyColor.r || this.skyColor.r,
+					worldSettings.skyColor.g || this.skyColor.g,
+					worldSettings.skyColor.b || this.skyColor.b,
+				);
 				this.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : 0;
 
 				if (worldSettings.hires === undefined) worldSettings.hires = {};
@@ -87,7 +103,7 @@ export class Map {
 				};
 			});
 
-		let mapPromise = Promise.all([settingsPromise, textureFilePromise])
+		return Promise.all([settingsPromise, textureFilePromise])
             .then(values => {
                 let textures = values[1];
                 if (textures === null) throw new Error("Failed to parse textures.json!");
@@ -99,8 +115,6 @@ export class Map {
 
                 alert(this.events, `Map '${this.id}' is loaded.`, "fine");
             });
-
-		return Promise.all([mapPromise, markerUpdatePromise]);
 	}
 
 	onTileLoad = layer => tile => {
@@ -117,6 +131,12 @@ export class Map {
 		});
 	}
 
+	/**
+	 * @param x {number}
+	 * @param z {number}
+	 * @param hiresViewDistance {number}
+	 * @param lowresViewDistance {number}
+	 */
 	loadMapArea(x, z, hiresViewDistance, lowresViewDistance) {
 		if (!this.isLoaded) return;
 
@@ -178,10 +198,10 @@ export class Map {
 
 	/**
 	 * Creates a hires Material with the given textures
-	 * @param vertexShader
-	 * @param fragmentShader
-	 * @param uniforms
-	 * @param textures the textures
+	 * @param vertexShader {string}
+	 * @param fragmentShader {string}
+	 * @param uniforms {object}
+	 * @param textures {object} the textures-data
 	 * @returns {ShaderMaterial[]} the hires Material (array because its a multi-material)
 	 */
 	createHiresMaterial(vertexShader, fragmentShader, uniforms, textures) {
@@ -240,6 +260,9 @@ export class Map {
 
 	/**
 	 * Creates a lowres Material
+	 * @param vertexShader {string}
+	 * @param fragmentShader {string}
+	 * @param uniforms {object}
 	 * @returns {ShaderMaterial} the hires Material
 	 */
 	createLowresMaterial(vertexShader, fragmentShader, uniforms) {
@@ -271,14 +294,12 @@ export class Map {
 
 		this.loadedTextures.forEach(texture => texture.dispose());
 		this.loadedTextures = [];
-
-		this.markerManager.dispose();
 	}
 
 	/**
 	 * Ray-traces and returns the terrain-height at a specific location, returns <code>false</code> if there is no map-tile loaded at that location
-	 * @param x
-	 * @param z
+	 * @param x {number}
+	 * @param z {number}
 	 * @returns {boolean|number}
 	 */
 	terrainHeightAt(x, z) {
@@ -313,10 +334,22 @@ export class Map {
 		}
 	}
 
+	/**
+	 * Creates a MarkerFileManager that is loading and updating the markers for this map.
+	 * @param markerScene {Scene} - The scene to which all markers will be added
+	 * @returns {MarkerFileManager}
+	 */
+	createMarkerFileManager(markerScene) {
+		return new MarkerFileManager(markerScene, this.dataUrl + "../markers.json", this.id, this.events);
+	}
+
 	dispose() {
 		this.unload();
 	}
 
+	/**
+	 * @returns {boolean}
+	 */
 	get isLoaded() {
 		return !!(this.hiresMaterial && this.lowresMaterial);
 	}

@@ -1,6 +1,6 @@
 /**
  * Takes a base46 string and converts it into an image element
- * @param string
+ * @param string {string}
  * @returns {HTMLElement}
  */
 import {MathUtils} from "three";
@@ -13,8 +13,8 @@ export const stringToImage = string => {
 
 /**
  * Creates an optimized path from x,z coordinates used by bluemap to save tiles
- * @param x
- * @param z
+ * @param x {number}
+ * @param z {number}
  * @returns {string}
  */
 export const pathFromCoords = (x, z) => {
@@ -31,7 +31,7 @@ export const pathFromCoords = (x, z) => {
 
 /**
  * Splits a number into an optimized folder-path used to save bluemap-tiles
- * @param num
+ * @param num {number}
  * @returns {string}
  */
 const splitNumberToPath = num => {
@@ -42,7 +42,7 @@ const splitNumberToPath = num => {
         path += '-';
     }
 
-    let s = parseInt(num).toString();
+    let s = num.toString();
 
     for (let i = 0; i < s.length; i++) {
         path += s.charAt(i) + '/';
@@ -53,8 +53,8 @@ const splitNumberToPath = num => {
 
 /**
  * Hashes tile-coordinates to be saved in a map
- * @param x
- * @param z
+ * @param x {number}
+ * @param z {number}
  * @returns {string}
  */
 export const hashTile = (x, z) => `x${x}z${z}`;
@@ -62,9 +62,9 @@ export const hashTile = (x, z) => `x${x}z${z}`;
 
 /**
  * Dispatches an event to the element of this map-viewer
- * @param element the element on that the event is dispatched
- * @param event
- * @param detail
+ * @param element {EventTarget} the element on that the event is dispatched
+ * @param event {string}
+ * @param detail {object}
  * @returns {undefined|void|boolean}
  */
 export const dispatchEvent = (element, event, detail = {}) => {
@@ -83,9 +83,9 @@ export const dispatchEvent = (element, event, detail = {}) => {
  * - info
  * - warning
  * - error
- * @param element the element on that the event is dispatched
- * @param message
- * @param level
+ * @param element {EventTarget} the element on that the event is dispatched
+ * @param message {string}
+ * @param level {string}
  */
 export const alert = (element, message, level = "info") => {
 
@@ -112,7 +112,7 @@ export const alert = (element, message, level = "info") => {
 /**
  * Source: https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro/35385518#35385518
  *
- * @param {String} html representing a single element
+ * @param html {string} representing a single element
  * @return {Element}
  */
 export const htmlToElement = html => {
@@ -124,7 +124,7 @@ export const htmlToElement = html => {
 /**
  * Source: https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro/35385518#35385518
  *
- * @param {String} html representing any number of sibling elements
+ * @param html {string} representing any number of sibling elements
  * @return {NodeList}
  */
 export const htmlToElements = html => {
@@ -135,10 +135,10 @@ export const htmlToElements = html => {
 
 /**
  * Schedules an animation
- * @param durationMs the duration of the animation in ms
- * @param animationFrame a function that is getting called each frame with the parameters (progress (0-1), deltaTime)
- * @param postAnimation a function that gets called once after the animation is finished or cancelled. The function accepts one bool-parameter whether the animation was finished (true) or canceled (false)
- * @returns the animation object
+ * @param durationMs {number} the duration of the animation in ms
+ * @param animationFrame {function(progress: number, deltaTime: number)} a function that is getting called each frame with the parameters (progress (0-1), deltaTime)
+ * @param postAnimation {function(finished: boolean)} a function that gets called once after the animation is finished or cancelled. The function accepts one bool-parameter whether the animation was finished (true) or canceled (false)
+ * @returns {{cancel: function()}} the animation object
  */
 export const animate = function (animationFrame, durationMs = 1000, postAnimation = null) {
     let animation = {
@@ -181,13 +181,44 @@ export const animate = function (animationFrame, durationMs = 1000, postAnimatio
  *
  * Source: https://plainjs.com/javascript/styles/get-the-position-of-an-element-relative-to-the-document-24/
  *
- * @param element
+ * @param element {Element}
  * @returns {{top: number, left: number}}
  */
-export const elementOffset = (element) => {
+export const elementOffset = element => {
     let rect = element.getBoundingClientRect(),
         scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
         scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
 }
 
+/**
+ * Very simple deep equals, should not be used for complex objects. Is designed for comparing parsed json-objects.
+ * @param object1 {object}
+ * @param object2 {object}
+ * @returns {boolean}
+ */
+export const deepEquals = (object1, object2) => {
+    if (Object.is(object1, object2)) return true;
+
+    let type = typeof object1;
+    if (type !== typeof object2) return false;
+
+    if (type === 'number' || type === 'boolean' || type === 'string') return false;
+
+    if (Array.isArray(object1)){
+        let len = object1.length;
+        if (len !== object2.length) return false;
+        for (let i = 0; i < len; i++) {
+            if (!deepEquals(object1[i], object2[i])) return false;
+        }
+
+        return true;
+    }
+
+    for (let property in object1) {
+        if (!object1.hasOwnProperty(property)) continue;
+        if (!deepEquals(object1[property], object2[property])) return false;
+    }
+
+    return true;
+}

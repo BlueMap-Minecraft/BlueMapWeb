@@ -70,7 +70,7 @@
             "z": 20.0
           },
           "minDistance": 100.0,
-          "maxDistance": 1000.0,
+          "maxDistance": 800.0,
           "label": "<div style='background-color: white; padding: 5px;'><b>Styling this labels will be the job of the main-plugin, not this Library :)</b></div>",
           "newTab": true,
           "lineWidth": 5,
@@ -109,15 +109,15 @@
           "type": "poi",
           "map": "world",
           "position": {
-            "x": 0.0,
-            "y": 81.0,
-            "z": 144.0
+            "x": 50.0,
+            "y": 65.0,
+            "z": -44.0
           },
           "iconAnchor": {
             "x": 25,
             "y": 45
           },
-          "minDistance": 100.0,
+          "minDistance": 0.0,
           "maxDistance": 800.0,
           "label": "Spawn"
         },
@@ -131,64 +131,64 @@
             "z": 144.0
           },
           "minDistance": 0.0,
-          "maxDistance": 200.0,
+          "maxDistance": 400.0,
           "label": "WOAH! i am <b>3D</b>!!",
           "newTab": true,
           "lineWidth": 2,
           "shape": [
             {
               "x": 48.0,
-              "z": 104.0
+              "z": 4.0
             },
             {
               "x": 48.0,
-              "z": 200.0
+              "z": 100.0
             },
             {
               "x": 112.0,
-              "z": 200.0
+              "z": 100.0
             },
             {
               "x": 112.0,
-              "z": 136.0
+              "z": 36.0
             },
             {
               "x": 96.0,
-              "z": 136.0
+              "z": 36.0
             },
             {
               "x": 96.0,
-              "z": 174.0
+              "z": 74.0
             },
             {
               "x": 80.0,
-              "z": 184.0
+              "z": 84.0
             },
             {
               "x": 80.0,
-              "z": 120.0
+              "z": 20.0
             },
             {
               "x": 112.0,
-              "z": 120.0
+              "z": 20.0
             },
             {
               "x": 112.0,
-              "z": 98.0
+              "z": -2.0
             },
             {
               "x": 80.0,
-              "z": 88.0
+              "z": -12.0
             },
             {
               "x": 80.0,
-              "z": 104.0
+              "z": 4.0
             }
           ],
           "depthTest": true,
-          "minHeight": 0,
-          "maxHeight": 150,
-          "borderColor": {
+          "shapeMinY": 0,
+          "shapeMaxY": 150,
+          "lineColor": {
             "r": 103,
             "g": 252,
             "b": 100,
@@ -210,8 +210,8 @@
             "y": 80,
             "z": 2352.0
           },
-          "minDistance": 0.0,
-          "maxDistance": 500.0,
+          "minDistance": 200.0,
+          "maxDistance": 100000.0,
           "label": "Styling this labels will be the job of the main-plugin, not this Library :)",
           "newTab": true,
           "shape": [

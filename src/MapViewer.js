@@ -1,7 +1,7 @@
 import {
 	PerspectiveCamera,
 	WebGLRenderer,
-	Vector2, Raycaster, Layers
+	Vector2, Raycaster, Layers, Scene
 } from "three";
 import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
@@ -24,6 +24,12 @@ export class MapViewer {
 		RIGHTCLICK: 1
 	};
 
+	/**
+	 * @param element {Element}
+	 * @param dataUrl {string}
+	 * @param liveApiUrl {string}
+	 * @param events {EventTarget}
+	 */
 	constructor(element, dataUrl = "data/", liveApiUrl = "live/", events = element) {
 		Object.defineProperty( this, 'isMapViewer', { value: true } );
 
@@ -84,7 +90,10 @@ export class MapViewer {
 		this.raycaster.layers.enableAll();
 		this.raycaster.params.Line2 = {threshold: 20}
 
+		/** @type {Map} */
 		this.map = null;
+
+		this.markerScene = new Scene();
 
 		this.lastFrame = 0;
 
@@ -124,13 +133,6 @@ export class MapViewer {
 
 		let outerDiv = htmlToElement(`<div style="position: relative; width: 100%; height: 100%; overflow: hidden;"></div>`);
 		this.rootElement.appendChild(outerDiv)
-		/*this.rootElement.addEventListener('click', event => {
-			let rootOffset = elementOffset(this.rootElement);
-			this.handleMapInteraction(new Vector2(
-				((event.pageX - rootOffset.top) / this.rootElement.clientWidth) * 2 - 1,
-				-((event.pageY - rootOffset.left) / this.rootElement.clientHeight) * 2 + 1
-			));
-		});*/
 		this.hammer.on('tap', event => {
 			let rootOffset = elementOffset(this.rootElement);
 			this.handleMapInteraction(new Vector2(
@@ -168,6 +170,10 @@ export class MapViewer {
 		this.camera.updateProjectionMatrix();
 	};
 
+	/**
+	 * @param screenPos {{x: number, y:number}}
+	 * @param interactionType {number}
+	 */
 	handleMapInteraction(screenPos, interactionType = MapViewer.InteractionType.LEFTCLICK) {
 		if (this.map && this.map.isLoaded){
 			this.raycaster.setFromCamera(screenPos, this.camera);
@@ -176,16 +182,21 @@ export class MapViewer {
 			lowresLayer.set(2);
 
 			// check marker interactions
-			let intersects = this.raycaster.intersectObjects([this.map.scene, this.map.markerManager.objectMarkerScene], true);
+			let intersects = this.raycaster.intersectObjects([this.map.scene, this.markerScene], true);
 			let covered = false;
 			for (let i = 0; i < intersects.length; i++) {
-				if (intersects[0].object){
-					let marker = intersects[i].object.marker;
-					if (marker && marker._opacity > 0 && (!covered || !marker.depthTest)) {
-						marker.onClick(intersects[i].pointOnLine || intersects[i].point);
-						return;
-					} else if (!intersects[i].object.layers.test(lowresLayer)) {
-						covered = true;
+				if (intersects[i].object){
+					let object = intersects[i].object;
+					if (object.visible) {
+						if (!covered || (object.material && !object.material.depthTest)) {
+							if (object.onClick({
+								interactionType: interactionType,
+								intersection: intersects[i]
+							})) return;
+							covered = true;
+						} else if (!intersects[i].object.layers.test(lowresLayer)) {
+							covered = true;
+						}
 					}
 				}
 			}
@@ -201,7 +212,7 @@ export class MapViewer {
 
 	/**
 	 * The render-loop to update and possibly render a new frame.
-	 * @param now the current time in milliseconds
+	 * @param now {number} the current time in milliseconds
 	 */
 	renderLoop = (now) => {
 		requestAnimationFrame(this.renderLoop);
@@ -229,6 +240,7 @@ export class MapViewer {
 
 	/**
 	 * Renders a frame
+	 * @param delta {number}
 	 */
 	render(delta) {
 		dispatchEvent(this.events, "bluemapRenderFrame", {
@@ -263,15 +275,18 @@ export class MapViewer {
 			this.camera.layers.set(0);
 			if (this.controlsManager.distance < 2000) this.camera.layers.enable(1);
 			this.renderer.render(this.map.scene, this.camera);
-			this.renderer.render(this.map.markerManager.objectMarkerScene, this.camera);
-
-			this.css2dRenderer.render(this.map.markerManager.elementMarkerScene, this.camera);
+			//this.renderer.render(this.map.markerManager.objectMarkerScene, this.camera);
+			//this.css2dRenderer.render(this.map.markerManager.elementMarkerScene, this.camera);
 		}
+
+		// render markers
+		this.renderer.render(this.markerScene, this.camera);
+		this.css2dRenderer.render(this.markerScene, this.camera);
 	}
 
 	/**
 	 * Changes / Sets the map that will be loaded and displayed
-	 * @param map
+	 * @param map {Map}
 	 */
 	setMap(map = null) {
 		if (this.map && this.map.isMap) this.map.unload();
@@ -303,6 +318,12 @@ export class MapViewer {
 		}
 	}
 
+	/**
+	 * @param centerX {number}
+	 * @param centerZ {number}
+	 * @param hiresViewDistance {number}
+	 * @param lowresViewDistance {number}
+	 */
 	loadMapArea(centerX, centerZ, hiresViewDistance = -1, lowresViewDistance = -1) {
 		this.loadedCenter.set(centerX, centerZ);
 		if (hiresViewDistance >= 0) this.loadedHiresViewDistance = hiresViewDistance;
@@ -311,10 +332,16 @@ export class MapViewer {
 		this.updateLoadedMapArea();
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get superSampling() {
 		return this.superSamplingValue;
 	}
 
+	/**
+	 * @param value {number}
+	 */
 	set superSampling(value) {
 		this.superSamplingValue = value;
 		this.handleContainerResize();
@@ -324,7 +351,7 @@ export class MapViewer {
 
 	/**
 	 * Applies a loaded settings-object (settings.json)
-	 * @param settings
+	 * @param settings {{maps: {}}}
 	 */
 	applySettings(settings) {
 

@@ -4,7 +4,7 @@ import {
 	Mesh,
 	SphereGeometry,
 	ShaderMaterial,
-	BackSide
+	BackSide, Color
 } from 'three';
 
 import { SKY_FRAGMENT_SHADER } from './SkyFragmentShader';
@@ -24,7 +24,7 @@ export class SkyboxScene extends Scene {
 		};
 
 		this.UNIFORM_skyColor = {
-			value: new Vector3(0.5, 0.5, 1)
+			value: new Color(0.5, 0.5, 1)
 		};
 
 		this.UNIFORM_ambientLight = {
@@ -47,26 +47,44 @@ export class SkyboxScene extends Scene {
 		this.add(skybox);
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get sunlight() {
 		return this.UNIFORM_sunlight.value;
 	}
 
+	/**
+	 * @param strength {number}
+	 */
 	set sunlight(strength) {
 		this.UNIFORM_sunlight.value = strength;
 	}
 
+	/**
+	 * @returns {Color}
+	 */
 	get skyColor() {
 		return this.UNIFORM_skyColor.value;
 	}
 
+	/**
+	 * @param color {Color}
+	 */
 	set skyColor(color) {
-		this.UNIFORM_skyColor.value = color;
+		this.UNIFORM_skyColor.value.set(color);
 	}
 
+	/**
+	 * @returns {number}
+	 */
 	get ambientLight() {
 		return this.UNIFORM_ambientLight.value;
 	}
 
+	/**
+	 * @param strength {number}
+	 */
 	set ambientLight(strength) {
 		this.UNIFORM_ambientLight.value = strength;
 	}

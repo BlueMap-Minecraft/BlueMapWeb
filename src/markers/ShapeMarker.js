@@ -1,227 +1,416 @@
 import {Marker} from "./Marker";
-import {
-    Color,
-    DoubleSide,
-    Mesh,
-    Object3D, ShaderMaterial,
-    Shape,
-    ShapeBufferGeometry,
-    Vector2
-} from "three";
+import {Color, DoubleSide, Mesh, ShaderMaterial, Shape, ShapeBufferGeometry, Vector2} from "three";
 import {LineMaterial} from "../util/lines/LineMaterial";
+import {MARKER_FILL_VERTEX_SHADER} from "./MarkerFillVertexShader";
+import {MARKER_FILL_FRAGMENT_SHADER} from "./MarkerFillFragmentShader";
 import {LineGeometry} from "../util/lines/LineGeometry";
 import {Line2} from "../util/lines/Line2";
-import {MARKER_FILL_FRAGMENT_SHADER} from "./shader/MarkerFillFragmentShader";
-import {MARKER_FILL_VERTEX_SHADER} from "./shader/MarkerFillVertexShader";
+import {deepEquals} from "../util/Utils";
+import {ObjectMarker} from "./ObjectMarker";
 
-export class ShapeMarker extends Marker {
+export class ShapeMarker extends ObjectMarker {
 
-    constructor(markerSet, id, parentObject) {
-        super(markerSet, id);
+    /**
+     * @param markerId {string}
+     */
+    constructor(markerId) {
+        super(markerId);
         Object.defineProperty(this, 'isShapeMarker', {value: true});
-        Object.defineProperty(this, 'type', {value: "shape"});
+        this.markerType = "shape";
 
-        let fillColor = Marker.normalizeColor({});
-        let borderColor = Marker.normalizeColor({});
-        let lineWidth = 2;
-        let depthTest = false;
+        let zero = new Vector2();
+        let shape = new Shape([zero, zero, zero]);
+        this.fill = new ShapeMarkerFill(shape);
+        this.border = new ShapeMarkerBorder(shape);
+        this.border.renderOrder = -1; // render border before fill
 
-        this._lineOpacity = 1;
-        this._fillOpacity = 1;
+        this.add(this.border, this.fill);
 
-        this._markerObject = new Object3D();
-        this._markerObject.position.copy(this.position);
-        parentObject.add(this._markerObject);
-
-        this._markerFillMaterial = new ShaderMaterial({
-            vertexShader: MARKER_FILL_VERTEX_SHADER,
-            fragmentShader: MARKER_FILL_FRAGMENT_SHADER,
-            side: DoubleSide,
-            depthTest: depthTest,
-            transparent: true,
-            uniforms: {
-                markerColor: { value: fillColor.vec4 }
-            }
-        });
-
-        this._markerLineMaterial = new LineMaterial({
-            color: new Color(borderColor.rgb),
-            opacity: borderColor.a,
-            transparent: true,
-            linewidth: lineWidth,
-            depthTest: depthTest,
-            vertexColors: false,
-            dashed: false
-        });
-        this._markerLineMaterial.resolution.set(window.innerWidth, window.innerHeight);
+        this._markerData = {};
     }
 
-    update(markerData) {
-        super.update(markerData);
-        this.height = markerData.height ? parseFloat(markerData.height) : 0.0;
-        this.depthTest = !!markerData.depthTest;
+    /**
+     * @param y {number}
+     */
+    setShapeY(y) {
+        let relativeY = y - this.position.y;
+        this.fill.position.y = relativeY;
+        this.border.position.y = relativeY;
+    }
 
-        if (markerData.fillColor) this.fillColor = markerData.fillColor;
-        if (markerData.borderColor) this.borderColor = markerData.borderColor;
+    /**
+     * @param shape {Shape}
+     */
+    setShape(shape) {
+        this.fill.updateGeometry(shape);
+        this.border.updateGeometry(shape);
+    }
 
-        this.lineWidth = markerData.lineWidth ? parseFloat(markerData.lineWidth) : 2;
+    /**
+     * @typedef {{r: number, g: number, b: number, a: number}} ColorLike
+     */
 
-        let points = [];
-        if (Array.isArray(markerData.shape)) {
-            markerData.shape.forEach(point => {
-                points.push(new Vector2(parseFloat(point.x), parseFloat(point.z)));
-            });
+    /**
+     * @param markerData {{
+     *      position: {x: number, y: number, z: number},
+     *      label: string,
+     *      shape: {x: number, z: number}[],
+     *      shapeY: number,
+     *      height: number,
+     *      link: string,
+     *      newTab: boolean,
+     *      depthTest: boolean,
+     *      lineWidth: number,
+     *      borderColor: ColorLike,
+     *      lineColor: ColorLike,
+     *      fillColor: ColorLike,
+     *      minDistance: number,
+     *      maxDistance: number
+     *      }}
+     */
+    updateFromData(markerData) {
+        super.updateFromData(markerData);
+
+        // update shape only if needed, based on last update-data
+        if (
+            !this._markerData.shape || !deepEquals(markerData.shape, this._markerData.shape) ||
+            !this._markerData.position || !deepEquals(markerData.position, this._markerData.position)
+        ){
+            this.setShape(this.createShapeFromData(markerData.shape));
         }
-        this.shape = points;
-    }
 
-    _onBeforeRender(renderer, scene, camera) {
-        super._onBeforeRender(renderer, scene, camera);
+        // update shapeY
+        this.setShapeY((markerData.shapeY || markerData.height || 0) + 0.01); //"height" for backwards compatibility, adding 0.01 to avoid z-fighting
 
-        this._markerFillMaterial.uniforms.markerColor.value.w = this._fillOpacity * this._opacity;
-        this._markerLineMaterial.opacity = this._lineOpacity * this._opacity;
+        // update depthTest
+        this.border.depthTest = !!markerData.depthTest;
+        this.fill.depthTest = !!markerData.depthTest;
+
+        // update border-width
+        this.border.linewidth = markerData.lineWidth !== undefined ? markerData.lineWidth : 2;
+
+        // update border-color
+        let bc = markerData.lineColor || markerData.borderColor || {}; //"borderColor" for backwards compatibility
+        this.border.color.setRGB((bc.r || 0) / 255, (bc.g || 0) / 255, (bc.b || 0) / 255);
+        this.border.opacity = bc.a || 0;
+
+        // update fill-color
+        let fc = markerData.fillColor || {};
+        this.fill.color.setRGB((fc.r || 0) / 255, (fc.g || 0) / 255, (fc.b || 0) / 255);
+        this.fill.opacity = fc.a || 0;
+
+        // update min/max distances
+        let minDist = markerData.minDistance || 0;
+        let maxDist = markerData.maxDistance !== undefined ? markerData.maxDistance : Number.MAX_VALUE;
+        this.border.fadeDistanceMin = minDist;
+        this.border.fadeDistanceMax = maxDist;
+        this.fill.fadeDistanceMin = minDist;
+        this.fill.fadeDistanceMax = maxDist;
+
+        // save used marker data for next update
+        this._markerData = markerData;
     }
 
     dispose() {
-        this._markerObject.parent.remove(this._markerObject);
-        this._markerObject.children.forEach(child => {
-            if (child.geometry && child.geometry.isGeometry) child.geometry.dispose();
-        });
-        this._markerObject.clear();
-
-        this._markerFillMaterial.dispose();
-        this._markerLineMaterial.dispose();
-
         super.dispose();
+
+        this.fill.dispose();
+        this.border.dispose();
     }
 
     /**
-     * Sets the fill-color
-     *
-     * color-object format:
-     * <code><pre>
-     * {
-     *     r: 0,    // int 0-255 red
-     *     g: 0,    // int 0-255 green
-     *     b: 0,    // int 0-255 blue
-     *     a: 0     // float 0-1 alpha
-     * }
-     * </pre></code>
-     *
-     * @param color {Object}
+     * @private
+     * Creates a shape from a data object, usually parsed json from a markers.json
+     * @param shapeData {object}
+     * @returns {Shape}
      */
-    set fillColor(color) {
-        color = Marker.normalizeColor(color);
+    createShapeFromData(shapeData) {
+        /** @type {THREE.Vector2[]} **/
+        let points = [];
 
-        this._markerFillMaterial.uniforms.markerColor.value = color.vec4;
-        this._fillOpacity = color.a;
-        this._markerFillMaterial.needsUpdate = true;
+        if (Array.isArray(shapeData)){
+            shapeData.forEach(point => {
+                let x = (point.x || 0) - this.position.x;
+                let z = (point.z || 0) - this.position.z;
+
+                points.push(new Vector2(x, z));
+            });
+        }
+
+        return new Shape(points);
     }
 
+}
+
+class ShapeMarkerFill extends Mesh {
+
     /**
-     * Sets the border-color
-     *
-     * color-object format:
-     * <code><pre>
-     * {
-     *     r: 0,    // int 0-255 red
-     *     g: 0,    // int 0-255 green
-     *     b: 0,    // int 0-255 blue
-     *     a: 0     // float 0-1 alpha
-     * }
-     * </pre></code>
-     *
-     * @param color {Object}
+     * @param shape {Shape}
      */
-    set borderColor(color) {
-        color = Marker.normalizeColor(color);
+    constructor(shape) {
+        let geometry = ShapeMarkerFill.createGeometry(shape);
+        let material = new ShaderMaterial({
+            vertexShader: MARKER_FILL_VERTEX_SHADER,
+            fragmentShader: MARKER_FILL_FRAGMENT_SHADER,
+            side: DoubleSide,
+            depthTest: true,
+            transparent: true,
+            uniforms: {
+                markerColor: { value: new Color() },
+                markerOpacity: { value: 0 },
+                fadeDistanceMin: { value: 0 },
+                fadeDistanceMax: { value: Number.MAX_VALUE },
+            }
+        });
 
-        this._markerLineMaterial.color.setHex(color.rgb);
-        this._lineOpacity = color.a;
-        this._markerLineMaterial.needsUpdate = true;
+        super(geometry, material);
     }
 
     /**
-     * Sets the width of the marker-line
-     * @param width {number}
+     * @returns {Color}
      */
-    set lineWidth(width) {
-        this._markerLineMaterial.linewidth = width;
-        this._markerLineMaterial.needsUpdate = true;
+    get color(){
+        return this.material.uniforms.markerColor.value;
     }
 
     /**
-     * Sets if this marker can be seen through terrain
+     * @returns {number}
+     */
+    get opacity() {
+        return this.material.uniforms.markerOpacity.value;
+    }
+
+    /**
+     * @param opacity {number}
+     */
+    set opacity(opacity) {
+        this.material.uniforms.markerOpacity.value = opacity;
+        this.visible = opacity > 0;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get depthTest() {
+        return this.material.depthTest;
+    }
+
+    /**
      * @param test {boolean}
      */
     set depthTest(test) {
-        this._markerFillMaterial.depthTest = test;
-        this._markerFillMaterial.needsUpdate = true;
-
-        this._markerLineMaterial.depthTest = test;
-        this._markerLineMaterial.needsUpdate = true;
-    }
-
-    get depthTest() {
-        return this._markerFillMaterial.depthTest;
+        this.material.depthTest = test;
     }
 
     /**
-     * Sets the height of this marker
-     * @param height {number}
+     * @returns {number}
      */
-    set height(height) {
-        this._markerObject.position.y = height;
+    get fadeDistanceMin() {
+        return this.material.uniforms.fadeDistanceMin.value;
     }
 
     /**
-     * Sets the points for the shape of this marker.
-     * @param points {Vector2[]}
+     * @param min {number}
      */
-    set shape(points) {
-        // remove old marker
-        this._markerObject.children.forEach(child => {
-            if (child.geometry && child.geometry.isGeometry) child.geometry.dispose();
+    set fadeDistanceMin(min) {
+        this.material.uniforms.fadeDistanceMin.value = min;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get fadeDistanceMax() {
+        return this.material.uniforms.fadeDistanceMax.value;
+    }
+
+    /**
+     * @param max {number}
+     */
+    set fadeDistanceMax(max) {
+        this.material.uniforms.fadeDistanceMax.value = max;
+    }
+
+    onClick(event) {
+        if (event.intersection) {
+            if (event.intersection.distance > this.fadeDistanceMax) return false;
+            if (event.intersection.distance < this.fadeDistanceMin) return false;
+        }
+
+        return super.onClick(event);
+    }
+
+    /**
+     * @param shape {Shape}
+     */
+    updateGeometry(shape) {
+        this.geometry.dispose();
+        this.geometry = ShapeMarkerFill.createGeometry(shape);
+    }
+
+    dispose() {
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+
+    /**
+     * @param shape {Shape}
+     * @returns {ShapeBufferGeometry}
+     */
+    static createGeometry(shape) {
+        let geometry = new ShapeBufferGeometry(shape, 5);
+        geometry.rotateX(Math.PI / 2); //make y to z
+
+        return geometry;
+    }
+
+}
+
+class ShapeMarkerBorder extends Line2 {
+
+    /**
+     * @param shape {Shape}
+     */
+    constructor(shape) {
+        let geometry = new LineGeometry();
+        geometry.setPositions(ShapeMarkerBorder.createLinePoints(shape));
+
+        let material = new LineMaterial({
+            color: new Color(),
+            opacity: 0,
+            transparent: true,
+            linewidth: 1,
+            depthTest: true,
+            vertexColors: false,
+            dashed: false,
         });
-        this._markerObject.clear();
+        material.uniforms.fadeDistanceMin = { value: 0 };
+        material.uniforms.fadeDistanceMax = { value: Number.MAX_VALUE };
 
-        if (points.length < 3) return;
+        material.resolution.set(window.innerWidth, window.innerHeight);
 
-        this._markerObject.position.x = this.position.x;
-        this._markerObject.position.z = this.position.z;
+        super(geometry, material);
 
-        // border-line
+        this.computeLineDistances();
+    }
+
+    /**
+     * @returns {Color}
+     */
+    get color(){
+        return this.material.color;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get opacity() {
+        return this.material.opacity;
+    }
+
+    /**
+     * @param opacity {number}
+     */
+    set opacity(opacity) {
+        this.material.opacity = opacity;
+        this.visible = opacity > 0;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get linewidth() {
+        return this.material.linewidth;
+    }
+
+    /**
+     * @param width {number}
+     */
+    set linewidth(width) {
+        this.material.linewidth = width;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get depthTest() {
+        return this.material.depthTest;
+    }
+
+    /**
+     * @param test {boolean}
+     */
+    set depthTest(test) {
+        this.material.depthTest = test;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get fadeDistanceMin() {
+        return this.material.uniforms.fadeDistanceMin.value;
+    }
+
+    /**
+     * @param min {number}
+     */
+    set fadeDistanceMin(min) {
+        this.material.uniforms.fadeDistanceMin.value = min;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get fadeDistanceMax() {
+        return this.material.uniforms.fadeDistanceMax.value;
+    }
+
+    /**
+     * @param max {number}
+     */
+    set fadeDistanceMax(max) {
+        this.material.uniforms.fadeDistanceMax.value = max;
+    }
+
+    onClick(event) {
+        if (event.intersection) {
+            if (event.intersection.distance > this.fadeDistanceMax) return false;
+            if (event.intersection.distance < this.fadeDistanceMin) return false;
+        }
+
+        return super.onClick(event);
+    }
+
+    /**
+     * @param shape {Shape}
+     */
+    updateGeometry(shape) {
+        this.geometry.setPositions(ShapeMarkerBorder.createLinePoints(shape));
+        this.computeLineDistances();
+    }
+
+    /**
+     * @param renderer {THREE.WebGLRenderer}
+     */
+    onBeforeRender(renderer) {
+        renderer.getSize(this.material.resolution);
+    }
+
+    dispose() {
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+
+    /**
+     * @param shape {Shape}
+     * @returns {number[]}
+     */
+    static createLinePoints(shape) {
         let points3d = [];
+        let points = shape.getPoints(5);
         points.forEach(point => points3d.push(point.x, 0, point.y));
-        points3d.push(points[0].x, 0, points[0].y)
-        let lineGeo = new LineGeometry()
-        lineGeo.setPositions(points3d);
-        lineGeo.translate(-this.position.x, 0.01456, -this.position.z);
-        let line = new Line2(lineGeo, this._markerLineMaterial);
-        line.onBeforeRender = renderer => renderer.getSize(line.material.resolution);
-        line.computeLineDistances();
-        line.marker = this;
-        this._markerObject.add(line);
+        points3d.push(points[0].x, 0, points[0].y);
 
-        // fill
-        if (this._markerFillMaterial.uniforms.markerColor.value.w > 0) {
-            let shape = new Shape(points);
-            let fillGeo = new ShapeBufferGeometry(shape, 1);
-            fillGeo.rotateX(Math.PI / 2); //make y to z
-            fillGeo.translate(-this.position.x, 0.01456, -this.position.z);
-            let fill = new Mesh(fillGeo, this._markerFillMaterial);
-            fill.marker = this;
-            this._markerObject.add(fill);
-        }
-
-        // put render-hook on first object
-        if (this._markerObject.children.length > 0) {
-            let oldHook = this._markerObject.children[0].onBeforeRender;
-            this._markerObject.children[0].onBeforeRender = (renderer, scene, camera, geometry, material, group) => {
-                this._onBeforeRender(renderer, scene, camera);
-                oldHook(renderer, scene, camera, geometry, material, group);
-            }
-        }
+        return points3d;
     }
 
 }

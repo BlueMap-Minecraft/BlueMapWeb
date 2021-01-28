@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
     <title>BlueMap Lib Test</title>
     <link rel="shortcut icon" href="favicon.png">
 </head>
@@ -20,9 +21,14 @@
 
         // load map
         let maps = [];
+        let markerManager = null;
         BlueMap.loadMaps("data/", bluemap.events).then(loadedMaps => {
             maps = loadedMaps;
             bluemap.setMap(maps[0]);
+
+            markerManager = maps[0].createMarkerFileManager(bluemap.markerScene);
+            markerManager.update();
+            markerManager.setAutoUpdateInterval(1000 * 10);
         });
     </script>
 </body>

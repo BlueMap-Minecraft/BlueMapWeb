@@ -33,6 +33,13 @@ export class TileManager {
     static tileMapSize = 100;
     static tileMapHalfSize = TileManager.tileMapSize / 2;
 
+    /**
+     * @param scene {THREE.Scene}
+     * @param tileLoader {TileLoader}
+     * @param onTileLoad {function(Tile)}
+     * @param onTileUnload {function(Tile)}
+     * @param events {EventTarget}
+     */
     constructor(scene, tileLoader, onTileLoad = null, onTileUnload = null, events = null) {
         Object.defineProperty( this, 'isTileManager', { value: true } );
 
@@ -59,6 +66,12 @@ export class TileManager {
         this.unloaded = true;
     }
 
+    /**
+     * @param x {number}
+     * @param z {number}
+     * @param viewDistanceX {number}
+     * @param viewDistanceZ {number}
+     */
     loadAroundTile(x, z, viewDistanceX, viewDistanceZ) {
         this.unloaded = false;
 
@@ -114,16 +127,18 @@ export class TileManager {
 
         if (this.loadTimeout) clearTimeout(this.loadTimeout);
 
-        if (this.currentlyLoading < 4) {
+        if (this.currentlyLoading < 8) {
             this.loadTimeout = setTimeout(this.loadCloseTiles, 0);
         } else {
             this.loadTimeout = setTimeout(this.loadCloseTiles, 1000);
         }
-
     }
 
+    /**
+     * @returns {boolean}
+     */
     loadNextTile() {
-        if (this.unloaded) return;
+        if (this.unloaded) return false;
 
         let x = 0;
         let z = 0;
@@ -146,8 +161,13 @@ export class TileManager {
         return false;
     }
 
+    /**
+     * @param x {number}
+     * @param z {number}
+     * @returns {boolean}
+     */
     tryLoadTile(x, z) {
-        if (this.unloaded) return;
+        if (this.unloaded) return false;
 
         if (Math.abs(x - this.centerTile.x) > this.viewDistanceX) return false;
         if (Math.abs(z - this.centerTile.y) > this.viewDistanceZ) return false;

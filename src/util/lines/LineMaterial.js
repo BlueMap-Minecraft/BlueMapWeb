@@ -54,6 +54,8 @@ ShaderLib[ 'line' ] = {
 		attribute vec3 instanceColorEnd;
 
 		varying vec2 vUv;
+		
+		varying float vDistance;
 
 		#ifdef USE_DASH
 
@@ -175,6 +177,8 @@ ShaderLib[ 'line' ] = {
 			gl_Position = clip;
 
 			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
+			
+			vDistance = -mvPosition.z;
 
 			#include <logdepthbuf_vertex>
 			#include <clipping_planes_vertex>
@@ -185,8 +189,13 @@ ShaderLib[ 'line' ] = {
 
 	fragmentShader:
 		`
+		#define FLT_MAX 3.402823466e+38
+
 		uniform vec3 diffuse;
 		uniform float opacity;
+		
+		uniform float fadeDistanceMax;
+		uniform float fadeDistanceMin;
 
 		#ifdef USE_DASH
 
@@ -204,6 +213,8 @@ ShaderLib[ 'line' ] = {
 		#include <clipping_planes_pars_fragment>
 
 		varying vec2 vUv;
+		
+		varying float vDistance;
 
 		void main() {
 
@@ -227,7 +238,18 @@ ShaderLib[ 'line' ] = {
 
 			}
 
-			vec4 diffuseColor = vec4( diffuse, opacity );
+			// distance fading
+			float fdMax = FLT_MAX;
+			if ( fadeDistanceMax > 0.0 ) fdMax = fadeDistanceMax;
+			
+			float minDelta = (vDistance - fadeDistanceMin) / fadeDistanceMin;
+			float maxDelta = (vDistance - fadeDistanceMax) / (fadeDistanceMax * 0.5);
+			float distanceOpacity = min(
+				clamp(minDelta, 0.0, 1.0),
+				1.0 - clamp(maxDelta + 1.0, 0.0, 1.0)
+			);
+
+			vec4 diffuseColor = vec4( diffuse, opacity * distanceOpacity );
 
 			#include <logdepthbuf_fragment>
 			#include <color_fragment>

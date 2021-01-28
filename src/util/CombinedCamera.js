@@ -2,6 +2,13 @@ import {MathUtils, Matrix4, PerspectiveCamera} from "three";
 
 export class CombinedCamera extends PerspectiveCamera {
 
+    /**
+     * @param fov {number}
+     * @param aspect {number}
+     * @param near {number}
+     * @param far {number}
+     * @param ortho {number}
+     */
     constructor(fov, aspect, near, far, ortho) {
         super(fov, aspect, near, far);
 
@@ -58,18 +65,30 @@ export class CombinedCamera extends PerspectiveCamera {
 
     }
 
+    /**
+     * @returns {boolean}
+     */
     get isPerspectiveCamera() {
         return this.ortho < 1;
     }
 
+    /**
+     * @returns {boolean}
+     */
     get isOrthographicCamera() {
         return !this.isPerspectiveCamera;
     }
 
+    /**
+     * @returns {string}
+     */
     get type() {
         return this.isPerspectiveCamera ? 'PerspectiveCamera' : 'OrthographicCamera';
     }
 
+    /**
+     * @param type {string}
+     */
     set type(type) {
         //ignore
     }

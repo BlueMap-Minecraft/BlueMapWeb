@@ -25,6 +25,11 @@ export class MapControls {
 
     static VECTOR2_ZERO = new Vector2(0, 0);
 
+    /**
+     * @param rootElement {Element}
+     * @param hammerLib {Hammer.Manager}
+     * @param events {EventTarget}
+     */
     constructor(rootElement, hammerLib, events = null) {
         Object.defineProperty( this, 'isMapControls', { value: true } );
 
@@ -32,6 +37,7 @@ export class MapControls {
         this.hammer = hammerLib;
         this.events = events;
 
+        /** @type {ControlsManager} */
         this.controls = null;
 
         this.targetPosition = new Vector3();
@@ -59,6 +65,9 @@ export class MapControls {
 
     }
 
+    /**
+     * @param controls {ControlsManager}
+     */
     start(controls) {
         this.controls = controls;
 
@@ -123,6 +132,10 @@ export class MapControls {
         window.removeEventListener('contextmenu', this.onContextMenu);
     }
 
+    /**
+     * @param deltaTime {number}
+     * @param map {Map}
+     */
     update(deltaTime, map) {
         // == process mouse movements ==
         let deltaMouse = this.lastMouse.clone().sub(this.mouse);
@@ -155,10 +168,9 @@ export class MapControls {
                 this.targetPosition.y,
                 this.targetPosition.z + (moveDelta.y * this.targetDistance / this.rootElement.clientHeight * 1.5)
             );
-            this.updatePositionTerrainHeight(map);
-        } else if (!this.positionTerrainHeight) {
-            this.updatePositionTerrainHeight(map);
         }
+
+        this.updatePositionTerrainHeight(map);
 
         // tilt/pan
         if (this.state === MapControls.STATES.ORBIT) {

@@ -3,6 +3,16 @@ import {BufferGeometryLoader, FileLoader, Mesh} from "three";
 
 export class TileLoader {
 
+    /**
+     * @param tilePath {string}
+     * @param material {THREE.Material | THREE.Material[]}
+     * @param tileSettings {{
+	 *      tileSize: {x: number, z: number},
+	 *	    scale: {x: number, z: number},
+     *      translate: {x: number, z: number}
+     * }}
+     * @param layer {number}
+     */
     constructor(tilePath, material, tileSettings, layer = 0) {
         Object.defineProperty( this, 'isTileLoader', { value: true } );
 
