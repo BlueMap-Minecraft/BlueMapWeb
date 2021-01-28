@@ -7,6 +7,7 @@ import {alert, dispatchEvent, hashTile, stringToImage} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
 import {MarkerFileManager} from "../markers/MarkerFileManager";
+import {PlayerMarkerManager} from "../markers/PlayerMarkerManager";
 
 export class Map {
 
@@ -332,15 +333,6 @@ export class Map {
 		} catch (err) {
 			return false;
 		}
-	}
-
-	/**
-	 * Creates a MarkerFileManager that is loading and updating the markers for this map.
-	 * @param markerScene {Scene} - The scene to which all markers will be added
-	 * @returns {MarkerFileManager}
-	 */
-	createMarkerFileManager(markerScene) {
-		return new MarkerFileManager(markerScene, this.dataUrl + "../markers.json", this.id, this.events);
 	}
 
 	dispose() {

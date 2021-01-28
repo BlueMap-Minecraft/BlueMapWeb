@@ -1,4 +1,4 @@
-import {FileLoader, Scene} from "three";
+import {Scene} from "three";
 import {MarkerSet} from "./MarkerSet";
 import {ShapeMarker} from "./ShapeMarker";
 import {alert} from "../util/Utils";
@@ -6,11 +6,12 @@ import {ExtrudeMarker} from "./ExtrudeMarker";
 import {LineMarker} from "./LineMarker";
 import {HtmlMarker} from "./HtmlMarker";
 import {PoiMarker} from "./PoiMarker";
+import {MarkerManager} from "./MarkerManager";
 
 /**
  * A manager for loading and updating markers from a markers.json file
  */
-export class MarkerFileManager {
+export class MarkerFileManager extends MarkerManager {
 
     /**
      * @constructor
@@ -20,120 +21,12 @@ export class MarkerFileManager {
      * @param events {EventTarget}
      */
     constructor(markerScene, fileUrl, mapId, events = null) {
+        super(markerScene, fileUrl, events);
         Object.defineProperty(this, 'isMarkerFileManager', {value: true});
 
-        this.markerScene = markerScene;
-        this.fileUrl = fileUrl;
         this.mapId = mapId;
-        this.events = events;
-
-        /** @type {Map<string, MarkerSet>} */
-        this.markerSets = new Map();
-        /** @type {Map<string, Marker>} */
-        this.markers = new Map();
-
-        /** @type {NodeJS.Timeout} */
-        this._updateInterval = null;
     }
 
-    /**
-     * Sets the automatic-update frequency, setting this to 0 or negative disables automatic updates (default).
-     * This is better than using setInterval() on update() because this will wait for the update to finish before requesting the next update.
-     * @param ms - interval in milliseconds
-     */
-    setAutoUpdateInterval(ms) {
-        if (this._updateInterval) clearInterval(this._updateInterval);
-        if (ms > 0) {
-            let autoUpdate = () => {
-                this.update().finally(() => {
-                    this._updateInterval = setTimeout(autoUpdate, ms);
-                });
-            };
-
-            this._updateInterval = setTimeout(autoUpdate, ms);
-        }
-    }
-
-    /**
-     * Loads the marker-file and updates all managed markers.
-     * @returns {Promise<object>} - A promise completing when the markers finished updating
-     */
-    update() {
-        return this.loadMarkerFile()
-            .then(markerFileData => this.updateFromData(markerFileData))
-            .catch(error => {
-                alert(this.events, error, "error");
-            });
-    }
-
-    /**
-     * Stops automatic-updates and disposes all markersets and markers managed by this manager
-     */
-    dispose() {
-        this.setAutoUpdateInterval(0);
-        this.markerSets.forEach(markerSet => markerSet.dispose());
-    }
-
-    /**
-     * @private
-     * Adds a MarkerSet to this Manager, removing any existing markerSet with this id first.
-     * @param markerSet {MarkerSet}
-     */
-    addMarkerSet(markerSet) {
-        this.removeMarkerSet(markerSet.markerSetId);
-
-        this.markerSets.set(markerSet.markerSetId, markerSet);
-        this.markerScene.add(markerSet)
-    }
-
-    /**
-     * @private
-     * Removes a MarkerSet from this Manager
-     * @param setId {string} - The id of the MarkerSet
-     */
-    removeMarkerSet(setId) {
-        let markerSet = this.markerSets.get(setId);
-
-        if (markerSet) {
-            this.markerScene.remove(markerSet);
-            this.markerSets.delete(setId);
-            markerSet.dispose();
-        }
-    }
-
-    /**
-     * @private
-     * Adds a marker to this manager
-     * @param markerSet {MarkerSet}
-     * @param marker {Marker}
-     */
-    addMarker(markerSet, marker) {
-        this.removeMarker(marker.markerId);
-
-        this.markers.set(marker.markerId, marker);
-        markerSet.add(marker);
-    }
-
-    /**
-     * @private
-     * Removes a marker from this manager
-     * @param markerId {string}
-     */
-    removeMarker(markerId) {
-        let marker = this.markers.get(markerId);
-
-        if (marker) {
-            if (marker.parent) marker.parent.remove(marker);
-            this.markers.delete(markerId);
-            marker.dispose();
-        }
-    }
-
-    /**
-     * @private
-     * Updates all managed markers using the provided data.
-     * @param markerData {object} - The data object, usually parsed json from a markers.json
-     */
     updateFromData(markerData) {
         if (!Array.isArray(markerData.markerSets)) return;
         let updatedMarkerSets = new Set();
@@ -144,7 +37,7 @@ export class MarkerFileManager {
                 let markerSet = this.updateMarkerSetFromData(markerSetData);
                 updatedMarkerSets.add(markerSet);
             } catch (err) {
-                alert(this.events, "Failed to parse markerset-data: " + err, "fine");
+                alert(this.events, err, "fine");
             }
         });
 
@@ -189,7 +82,7 @@ export class MarkerFileManager {
                     let marker = this.updateMarkerFromData(markerSet, markerData);
                     updatedMarkers.add(marker);
                 } catch (err) {
-                    alert(this.events, "Failed to parse marker-data: " + err, "fine");
+                    alert(this.events, err, "fine");
                     console.debug(err);
                 }
             });
@@ -239,26 +132,6 @@ export class MarkerFileManager {
         marker.updateFromData(markerData);
 
         return marker;
-    }
-
-    /**
-     * @private
-     * Loads the marker file
-     * @returns {Promise<Object>} - A promise completing with the parsed json object from the loaded file
-     */
-    loadMarkerFile() {
-        return new Promise((resolve, reject) => {
-            let loader = new FileLoader();
-            loader.setResponseType("json");
-            loader.load(this.fileUrl,
-                markerFileData => {
-                    if (!markerFileData) reject(`Failed to parse '${this.fileUrl}'!`);
-                    else resolve(markerFileData);
-                },
-                () => {},
-                () => reject(`Failed to load '${this.fileUrl}'!`)
-            )
-        });
     }
 
 }

@@ -19,7 +19,7 @@ export class HtmlMarker extends Marker {
         this.fadeDistanceMax = Number.MAX_VALUE;
 
         this.addEventListener( 'removed', () => {
-            this.element.parentNode.removeChild(this.element);
+            if (this.element.parentNode) this.element.parentNode.removeChild(this.element);
         });
 
         this.add(this.elementObject);

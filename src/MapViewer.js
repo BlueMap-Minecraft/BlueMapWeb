@@ -287,6 +287,7 @@ export class MapViewer {
 	/**
 	 * Changes / Sets the map that will be loaded and displayed
 	 * @param map {Map}
+	 * @returns Promise<void>
 	 */
 	setMap(map = null) {
 		if (this.map && this.map.isMap) this.map.unload();

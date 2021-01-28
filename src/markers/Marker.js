@@ -35,18 +35,24 @@ export class Marker extends Object3D {
      * @returns {number} - opacity between 0 and 1
      */
     static calculateDistanceOpacity(position, camera, fadeDistanceMin, fadeDistanceMax) {
-        //calculate "orthographic distance" to marker
-        Marker._posRelativeToCamera.subVectors(position, camera.position);
-        camera.getWorldDirection(Marker._cameraDirection);
-        let distance = Marker._posRelativeToCamera.dot(Marker._cameraDirection);
-
-        //calculate opacity based on (min/max)distance
+        let distance = Marker.calculateDistanceToCameraPlane(position, camera);
         let minDelta = (distance - fadeDistanceMin) / fadeDistanceMin;
         let maxDelta = (distance - fadeDistanceMax) / (fadeDistanceMax * 0.5);
         return Math.min(
             MathUtils.clamp(minDelta, 0, 1),
             1 - MathUtils.clamp(maxDelta + 1, 0, 1)
         );
+    }
+
+    /**
+     * @param position {Vector3}
+     * @param camera {THREE.Camera}
+     * @returns {number}
+     */
+    static calculateDistanceToCameraPlane (position, camera) {
+        Marker._posRelativeToCamera.subVectors(position, camera.position);
+        camera.getWorldDirection(Marker._cameraDirection);
+        return Marker._posRelativeToCamera.dot(Marker._cameraDirection);
     }
 
 }

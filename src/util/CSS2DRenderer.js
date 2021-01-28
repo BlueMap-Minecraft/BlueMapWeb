@@ -102,7 +102,7 @@ var CSS2DRenderer = function () {
             element.style.oTransform = style;
             element.style.transform = style;
 
-            element.style.display = ( parentVisible && object.visible && vector.z >= - 1 && vector.z <= 1 && element.style.opacity > 0 ) ? '' : 'none';
+            element.style.display = ( parentVisible && object.visible && vector.z >= - 1 && vector.z <= 1 && element.style.opacity !== "0" ) ? '' : 'none';
 
             var objectData = {
                 distanceToCameraSquared: getDistanceToSquared( camera, object )
