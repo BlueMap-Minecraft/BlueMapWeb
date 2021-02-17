@@ -3,8 +3,19 @@
  * @param string {string}
  * @returns {HTMLElement}
  */
-import {MathUtils} from "three";
+import {MathUtils, Vector2, Vector3} from "three";
 
+export const VEC2_ZERO = new Vector2(0, 0);
+export const VEC3_ZERO = new Vector3(0, 0, 0);
+export const VEC3_X = new Vector3(1, 0, 0);
+export const VEC3_Y = new Vector3(0, 1, 0);
+export const VEC3_Z = new Vector3(0, 0, 1);
+
+/**
+ * Converts a url-encoded image string to an actual image-element
+ * @param string {string}
+ * @returns {HTMLElement}
+ */
 export const stringToImage = string => {
     let image = document.createElementNS('http://www.w3.org/1999/xhtml', 'img');
     image.src = string;
@@ -268,4 +279,74 @@ export const deepEquals = (object1, object2) => {
     }
 
     return true;
+}
+
+/**
+ * Adds one listener to multiple events
+ * @param target {EventTarget}
+ * @param types {string|string[]}
+ * @param listener {EventListenerOrEventListenerObject | null}
+ * @param options {boolean | AddEventListenerOptions?}
+ */
+export const addEventListeners = (target, types, listener, options) => {
+    if (!Array.isArray(types)){
+        types = types.trim().split(" ");
+    }
+
+    types.forEach(type => target.addEventListener(type, listener, options));
+}
+
+/**
+ * Removes one listener to multiple events
+ * @param target {EventTarget}
+ * @param types {string|string[]}
+ * @param listener {EventListenerOrEventListenerObject | null}
+ * @param options {boolean | EventListenerOptions?}
+ */
+export const removeEventListeners = (target, types, listener, options) => {
+    if (!Array.isArray(types)){
+        types = types.trim().split(" ");
+    }
+
+    types.forEach(type => target.removeEventListener(type, listener, options));
+}
+
+/**
+ * Softly clamps towards a minimum value
+ * @param value {number}
+ * @param min {number}
+ * @param stiffness {number}
+ * @returns {number}
+ */
+export const softMin = (value, min, stiffness) => {
+    if (value >= min) return value;
+    let delta = min - value;
+    if (delta < 0.0001) return min;
+    return value + delta * stiffness;
+}
+
+/**
+ * Softly clamps towards a maximum value
+ * @param value {number}
+ * @param max {number}
+ * @param stiffness {number}
+ * @returns {number}
+ */
+export const softMax = (value, max, stiffness) => {
+    if (value <= max) return value;
+    let delta = value - max;
+    if (delta < 0.0001) return max;
+    return value - delta * stiffness;
+}
+
+/**
+ * Softly clamps towards a minimum and maximum value
+ * @param value {number}
+ * @param min {number}
+ * @param max {number}
+ * @param stiffness {number}
+ * @returns {number}
+ */
+export const softClamp = (value, min, max, stiffness) => {
+    return softMax(softMin(value, min, stiffness), max, stiffness);
 }

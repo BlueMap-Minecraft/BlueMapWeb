@@ -47,8 +47,8 @@ export class CombinedCamera extends PerspectiveCamera {
         if ( skew !== 0 ) left += near * skew / this.getFilmWidth();
 
         // this part different to PerspectiveCamera
-        let normalizedOrtho = -Math.pow(this.ortho - 1, 4) + 1;
-        let orthoTop = this.distance * Math.tan( MathUtils.DEG2RAD * 0.5 * this.fov ) / this.zoom;
+        let normalizedOrtho = -Math.pow(this.ortho - 1, 6) + 1;
+        let orthoTop = Math.max(this.distance, 0.0001) * Math.tan( MathUtils.DEG2RAD * 0.5 * this.fov ) / this.zoom;
         let orthoHeight = 2 * orthoTop;
         let orthoWidth = this.aspect * orthoHeight;
         let orthoLeft = - 0.5 * orthoWidth;

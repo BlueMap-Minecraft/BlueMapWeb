@@ -8,6 +8,7 @@
 </head>
 <body style="margin: 0; padding: 0;">
     <div id="map-container" style="position: absolute; width: 100%; height: 100%;"></div>
+    <!--<div id="debug-div" style="position: fixed; top: 10px; left: 10px; background-color: #111; opacity: 0.8; color: white; padding: 10px"></div>-->
 
     <script type="text/javascript" src="js/three.js"></script>
     <script type="text/javascript" src="js/hammer.js"></script>
@@ -18,6 +19,9 @@
 
         // show stats panel
         bluemap.stats.showPanel(1);
+
+        let mapControls = bluemap.controlsManager.controls;
+        let freeControls = new BlueMap.FreeFlightControls(bluemap.rootElement);
 
         // load map
         let maps = [];

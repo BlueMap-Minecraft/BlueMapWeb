@@ -1,12 +1,8 @@
-import {
-	PerspectiveCamera,
-	WebGLRenderer,
-	Vector2, Raycaster, Layers, Scene
-} from "three";
+import {Layers, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer} from "three";
 import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
 import {ControlsManager} from "./controls/ControlsManager";
-import {MapControls} from "./controls/MapControls";
+import {MapControls} from "./controls/map/MapControls";
 import Stats from "./util/Stats";
 import {alert, dispatchEvent, elementOffset, htmlToElement} from "./util/Utils";
 import {TileManager} from "./map/TileManager";
@@ -16,6 +12,7 @@ import {LOWRES_VERTEX_SHADER} from "./map/lowres/LowresVertexShader";
 import {LOWRES_FRAGMENT_SHADER} from "./map/lowres/LowresFragmentShader";
 import {CombinedCamera} from "./util/CombinedCamera";
 import {CSS2DRenderer} from "./util/CSS2DRenderer";
+import {FreeFlightControls} from "./controls/freeflight/FreeFlightControls";
 
 export class MapViewer {
 
@@ -84,7 +81,7 @@ export class MapViewer {
 		this.initializeHammer();
 
 		this.controlsManager = new ControlsManager(this, this.camera);
-		this.controlsManager.controls = new MapControls(this.rootElement, this.hammer, this.events);
+		this.controlsManager.controls = new MapControls(this.rootElement);
 
 		this.raycaster = new Raycaster();
 		this.raycaster.layers.enableAll();
@@ -218,7 +215,7 @@ export class MapViewer {
 		requestAnimationFrame(this.renderLoop);
 
 		// calculate delta time
-		if (this.lastFrame <= 0) { this.lastFrame = now; }
+		if (this.lastFrame <= 0) this.lastFrame = now;
 		let delta = now - this.lastFrame;
 		this.lastFrame = now;
 
@@ -228,7 +225,6 @@ export class MapViewer {
 		// update controls
 		if (this.map != null) {
 			this.controlsManager.update(delta, this.map);
-			this.controlsManager.updateCamera();
 		}
 
 		// render

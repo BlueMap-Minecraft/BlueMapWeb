@@ -1,10 +1,11 @@
 import {FileLoader, Object3D} from "three";
 import {Map} from "./map/Map";
 
-export { MapViewer } from "./MapViewer";
-export * from "./util/Utils";
-export { MarkerFileManager } from "./markers/MarkerFileManager";
-export { PlayerMarkerManager } from "./markers/PlayerMarkerManager";
+export * from "./MapViewer";
+export * from "./markers/MarkerFileManager";
+export * from "./markers/PlayerMarkerManager";
+export * from "./controls/map/MapControls";
+export * from "./controls/freeflight/FreeFlightControls";
 
 /**
  * Loads and returns a promise with an array of Maps loaded from that root-path.<br>

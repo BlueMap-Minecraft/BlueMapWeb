@@ -84,7 +84,7 @@ export class LabelPopup extends CSS2DObject {
 
         if (autoClose) {
             let removeHandler = evt => {
-                if (evt.path.includes(this.element)) return;
+                if (evt.composedPath().includes(this.element)) return;
 
                 inAnimation.cancel();
                 this.close();
