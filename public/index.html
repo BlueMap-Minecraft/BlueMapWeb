@@ -8,7 +8,6 @@
 </head>
 <body style="margin: 0; padding: 0;">
     <div id="map-container" style="position: absolute; width: 100%; height: 100%;"></div>
-    <!--<div id="debug-div" style="position: fixed; top: 10px; left: 10px; background-color: #111; opacity: 0.8; color: white; padding: 10px"></div>-->
 
     <script type="text/javascript" src="js/three.js"></script>
     <script type="text/javascript" src="js/hammer.js"></script>
@@ -20,14 +19,53 @@
         // show stats panel
         bluemap.stats.showPanel(1);
 
-        let mapControls = bluemap.controlsManager.controls;
+        let mapControls = new BlueMap.MapControls(bluemap.rootElement);
         let freeControls = new BlueMap.FreeFlightControls(bluemap.rootElement);
+        bluemap.controlsManager.controls = mapControls;
 
         // load map
+        const loadMaps = (dataUrl, events = null) => {
+            function loadSettings() {
+                return new Promise((resolve, reject) => {
+                    let loader = new THREE.FileLoader();
+                    loader.setResponseType("json");
+                    loader.load(dataUrl + "settings.json",
+                        resolve,
+                        () => {},
+                        () => reject("Failed to load the settings.json!")
+                    );
+                });
+            }
+
+            return loadSettings().then(settings => {
+                let maps = [];
+
+                // create maps
+                if (settings.maps !== undefined){
+                    for (let mapId in settings.maps) {
+                        if (!settings.maps.hasOwnProperty(mapId)) continue;
+
+                        let mapSettings = settings.maps[mapId];
+                        if (mapSettings.enabled)
+                            maps.push(new BlueMap.Map(mapId, dataUrl + mapId + "/", dataUrl + "settings.json", dataUrl + "textures.json", events));
+                    }
+                }
+
+                // sort maps
+                maps.sort((map1, map2) => {
+                    let sort = settings.maps[map1.id].ordinal - settings.maps[map2.id].ordinal;
+                    if (isNaN(sort)) return 0;
+                    return sort;
+                });
+
+                return maps;
+            });
+        }
+
         let maps = [];
         let markerManager = null;
         let playerManager = null;
-        BlueMap.loadMaps("data/", bluemap.events).then(loadedMaps => {
+        loadMaps("data/", bluemap.events).then(loadedMaps => {
             maps = loadedMaps;
 
             markerManager = new BlueMap.MarkerFileManager(bluemap.markerScene, "data/markers.json", maps[0].id, bluemap.events);
@@ -38,7 +76,7 @@
             playerManager.update();
             playerManager.setAutoUpdateInterval(1000);
 
-            bluemap.setMap(maps[0]).then(() => {
+            bluemap.switchMap(maps[0]).then(() => {
                 playerManager.worldId = maps[0].world;
             });
         });

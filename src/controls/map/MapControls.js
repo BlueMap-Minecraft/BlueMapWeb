@@ -2,7 +2,7 @@ import {MouseMoveControls} from "./mouse/MouseMoveControls";
 import {MouseZoomControls} from "./mouse/MouseZoomControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
 import {MouseAngleControls} from "./mouse/MouseAngleControls";
-import {MathUtils} from "three";
+import {MathUtils, Vector2} from "three";
 import {animate, EasingFunctions, softClamp, softMin} from "../../util/Utils";
 import {MapHeightControls} from "./MapHeightControls";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
@@ -23,6 +23,8 @@ export class MapControls {
      */
     constructor(rootElement) {
         this.rootElement = rootElement;
+
+        /** @type {ControlsManager} */
         this.manager = null;
 
         this.started = false;
@@ -58,6 +60,7 @@ export class MapControls {
         this.manager = manager;
 
         this.rootElement.addEventListener("contextmenu", this.onContextMenu);
+        this.hammer.on("tap", this.onTap);
 
         this.mouseMove.start(manager);
         this.mouseRotate.start(manager);
@@ -97,6 +100,7 @@ export class MapControls {
 
     stop() {
         this.rootElement.removeEventListener("contextmenu", this.onContextMenu);
+        this.hammer.off("tap", this.onTap);
 
         this.mouseMove.stop();
         this.mouseRotate.stop();
@@ -236,6 +240,10 @@ export class MapControls {
 
     onContextMenu = evt => {
         evt.preventDefault();
+    }
+
+    onTap = evt => {
+        this.manager.handleMapInteraction(new Vector2(evt.center.x, evt.center.y));
     }
 
 }

@@ -1,8 +1,7 @@
-import {Layers, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer} from "three";
+import {PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer} from "three";
 import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
 import {ControlsManager} from "./controls/ControlsManager";
-import {MapControls} from "./controls/map/MapControls";
 import Stats from "./util/Stats";
 import {alert, dispatchEvent, elementOffset, htmlToElement} from "./util/Utils";
 import {TileManager} from "./map/TileManager";
@@ -12,29 +11,18 @@ import {LOWRES_VERTEX_SHADER} from "./map/lowres/LowresVertexShader";
 import {LOWRES_FRAGMENT_SHADER} from "./map/lowres/LowresFragmentShader";
 import {CombinedCamera} from "./util/CombinedCamera";
 import {CSS2DRenderer} from "./util/CSS2DRenderer";
-import {FreeFlightControls} from "./controls/freeflight/FreeFlightControls";
 
 export class MapViewer {
 
-	static InteractionType = {
-		LEFTCLICK: 0,
-		RIGHTCLICK: 1
-	};
-
 	/**
 	 * @param element {Element}
-	 * @param dataUrl {string}
-	 * @param liveApiUrl {string}
 	 * @param events {EventTarget}
 	 */
-	constructor(element, dataUrl = "data/", liveApiUrl = "live/", events = element) {
+	constructor(element, events = element) {
 		Object.defineProperty( this, 'isMapViewer', { value: true } );
 
 		this.rootElement = element;
 		this.events = events;
-
-		this.dataUrl = dataUrl;
-		this.liveApiUrl = liveApiUrl;
 
 		this.stats = new Stats();
 		this.stats.hide();
@@ -77,11 +65,7 @@ export class MapViewer {
 		this.camera = new CombinedCamera(75, 1, 0.1, 10000, 0);
 		this.skyboxCamera = new PerspectiveCamera(75, 1, 0.1, 10000);
 
-		this.hammer = new Hammer.Manager(this.rootElement);
-		this.initializeHammer();
-
 		this.controlsManager = new ControlsManager(this, this.camera);
-		this.controlsManager.controls = new MapControls(this.rootElement);
 
 		this.raycaster = new Raycaster();
 		this.raycaster.layers.enableAll();
@@ -97,29 +81,11 @@ export class MapViewer {
 		// initialize
 		this.initializeRootElement();
 
-		// handle some events
+		// handle window resizes
 		window.addEventListener("resize", this.handleContainerResize);
 
 		// start render-loop
 		requestAnimationFrame(this.renderLoop);
-	}
-
-	initializeHammer() {
-		let touchTap = new Hammer.Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 2 });
-		let touchMove = new Hammer.Pan({ event: 'move', direction: Hammer.DIRECTION_ALL, threshold: 0 });
-		let touchTilt =  new Hammer.Pan({ event: 'tilt', direction: Hammer.DIRECTION_VERTICAL, pointers: 2, threshold: 0 });
-		let touchRotate = new Hammer.Rotate({ event: 'rotate', pointers: 2, threshold: 10 });
-		let touchZoom = new Hammer.Pinch({ event: 'zoom', pointers: 2, threshold: 0 });
-
-		touchTilt.recognizeWith(touchRotate);
-		touchTilt.recognizeWith(touchZoom);
-		touchRotate.recognizeWith(touchZoom);
-
-		this.hammer.add(touchTap);
-		this.hammer.add(touchMove);
-		this.hammer.add(touchTilt);
-		this.hammer.add(touchRotate);
-		this.hammer.add(touchZoom);
 	}
 
 	/**
@@ -129,14 +95,7 @@ export class MapViewer {
 		this.rootElement.innerHTML = "";
 
 		let outerDiv = htmlToElement(`<div style="position: relative; width: 100%; height: 100%; overflow: hidden;"></div>`);
-		this.rootElement.appendChild(outerDiv)
-		this.hammer.on('tap', event => {
-			let rootOffset = elementOffset(this.rootElement);
-			this.handleMapInteraction(new Vector2(
-				((event.center.x - rootOffset.top) / this.rootElement.clientWidth) * 2 - 1,
-				-((event.center.y - rootOffset.left) / this.rootElement.clientHeight) * 2 + 1
-			));
-		});
+		this.rootElement.appendChild(outerDiv);
 
 		// 3d-canvas
 		outerDiv.appendChild(this.renderer.domElement);
@@ -168,46 +127,58 @@ export class MapViewer {
 	};
 
 	/**
-	 * @param screenPos {{x: number, y:number}}
-	 * @param interactionType {number}
+	 * Triggers an interaction on the screen (map), e.g. a mouse-click.
+	 *
+	 * This will first attempt to invoke the onClick() method on the Object3D (e.g. Markers) that has been clicked.
+	 * And if none of those consumed the event, it will fire a <code>bluemapMapInteraction</code> event.
+	 *
+	 * @param screenPosition {Vector2} - Clicked position on the screen (usually event.x, event.y)
+	 * @param data {object} - Custom event data that will be added to the interaction-event
 	 */
-	handleMapInteraction(screenPos, interactionType = MapViewer.InteractionType.LEFTCLICK) {
+	handleMapInteraction(screenPosition, data = {}) {
+		let rootOffset = elementOffset(this.rootElement);
+		let normalizedScreenPos = new Vector2(
+			((screenPosition.x - rootOffset.top) / this.rootElement.clientWidth) * 2 - 1,
+			-((screenPosition.y - rootOffset.left) / this.rootElement.clientHeight) * 2 + 1
+		);
+
 		if (this.map && this.map.isLoaded){
-			this.raycaster.setFromCamera(screenPos, this.camera);
+			this.raycaster.setFromCamera(normalizedScreenPos, this.camera);
 
-			let lowresLayer = new Layers();
-			lowresLayer.set(2);
-
-			// check marker interactions
-			let intersects = this.raycaster.intersectObjects([this.map.scene, this.markerScene], true);
+			// check Object3D interactions
+			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.map.lowresTileManager.scene, this.markerScene], true);
 			let covered = false;
 			for (let i = 0; i < intersects.length; i++) {
 				if (intersects[i].object){
 					let object = intersects[i].object;
+
 					if (object.visible) {
 						if (!covered || (object.material && !object.material.depthTest)) {
 							if (object.onClick({
-								interactionType: interactionType,
+								data: data,
 								intersection: intersects[i]
 							})) return;
-							covered = true;
-						} else if (!intersects[i].object.layers.test(lowresLayer)) {
+						}
+
+						let parentRoot = object;
+						while(parentRoot.parent) parentRoot = parentRoot.parent;
+						if (parentRoot !== this.map.lowresTileManager.scene) {
 							covered = true;
 						}
 					}
 				}
 			}
 
+			// fire event
+			dispatchEvent(this.events, "bluemapMapInteraction", {
+				data: data,
+				intersections: intersects
+			});
 		}
 	}
 
-	updateLoadedMapArea = () => {
-		if (!this.map) return;
-
-		this.map.loadMapArea(this.loadedCenter.x, this.loadedCenter.y, this.loadedHiresViewDistance, this.loadedLowresViewDistance);
-	}
-
 	/**
+	 * @private
 	 * The render-loop to update and possibly render a new frame.
 	 * @param now {number} the current time in milliseconds
 	 */
@@ -235,6 +206,7 @@ export class MapViewer {
 	};
 
 	/**
+	 * @private
 	 * Renders a frame
 	 * @param delta {number}
 	 */
@@ -254,25 +226,16 @@ export class MapViewer {
 		this.renderer.render(this.skyboxScene, this.skyboxCamera);
 		this.renderer.clearDepth();
 
-		/*
-		Layers:
-		0 - always visible objects
-		1 - hires layer
-		2 - lowres layer
-		*/
-
 		if (this.map && this.map.isLoaded) {
 			//update uniforms
 			this.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
 
-			this.camera.layers.set(2);
-			this.renderer.render(this.map.scene, this.camera);
+			this.renderer.render(this.map.lowresTileManager.scene, this.camera);
 			this.renderer.clearDepth();
-			this.camera.layers.set(0);
-			if (this.controlsManager.distance < 2000) this.camera.layers.enable(1);
-			this.renderer.render(this.map.scene, this.camera);
-			//this.renderer.render(this.map.markerManager.objectMarkerScene, this.camera);
-			//this.css2dRenderer.render(this.map.markerManager.elementMarkerScene, this.camera);
+
+			if (this.controlsManager.distance < 2000) {
+				this.renderer.render(this.map.hiresTileManager.scene, this.camera);
+			}
 		}
 
 		// render markers
@@ -285,7 +248,7 @@ export class MapViewer {
 	 * @param map {Map}
 	 * @returns Promise<void>
 	 */
-	setMap(map = null) {
+	switchMap(map = null) {
 		if (this.map && this.map.isMap) this.map.unload();
 
 		this.map = map;
@@ -316,6 +279,7 @@ export class MapViewer {
 	}
 
 	/**
+	 * Loads the given area on the map (and unloads everything outside that area)
 	 * @param centerX {number}
 	 * @param centerZ {number}
 	 * @param hiresViewDistance {number}
@@ -327,6 +291,14 @@ export class MapViewer {
 		if (lowresViewDistance >= 0) this.loadedLowresViewDistance = lowresViewDistance;
 
 		this.updateLoadedMapArea();
+	}
+
+	/**
+	 * @private
+	 */
+	updateLoadedMapArea = () => {
+		if (!this.map) return;
+		this.map.loadMapArea(this.loadedCenter.x, this.loadedCenter.y, this.loadedHiresViewDistance, this.loadedLowresViewDistance);
 	}
 
 	/**
@@ -342,37 +314,6 @@ export class MapViewer {
 	set superSampling(value) {
 		this.superSamplingValue = value;
 		this.handleContainerResize();
-	}
-
-	// --------------------------
-
-	/**
-	 * Applies a loaded settings-object (settings.json)
-	 * @param settings {{maps: {}}}
-	 */
-	applySettings(settings) {
-
-		// reset maps
-		this.maps.forEach(map => map.dispose());
-		this.maps = [];
-
-		// create maps
-		if (settings.maps !== undefined){
-			for (let mapId in settings.maps) {
-				if (!settings.maps.hasOwnProperty(mapId)) continue;
-
-				let mapSettings = settings.maps[mapId];
-				if (mapSettings.enabled)
-					this.maps.push(new Map(mapId, this.dataUrl + mapId + "/", this.rootElement));
-			}
-		}
-
-		// sort maps
-		this.maps.sort((map1, map2) => {
-			let sort = settings.maps[map1.id].ordinal - settings.maps[map2.id].ordinal;
-			if (isNaN(sort)) return 0;
-			return sort;
-		});
 	}
 
 }

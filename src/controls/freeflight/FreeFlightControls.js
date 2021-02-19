@@ -75,6 +75,11 @@ export class FreeFlightControls {
         this.mouseAngle.stop();
         this.touchPan.stop();
 
+        this.target.removeEventListener("contextmenu", this.onContextMenu);
+        this.target.removeEventListener("mousedown", this.onMouseDown);
+        this.target.removeEventListener("mouseup", this.onMouseUp);
+        window.removeEventListener("wheel", this.onWheel);
+
         this.started = false;
     }
 
@@ -98,24 +103,8 @@ export class FreeFlightControls {
     }
 
     initializeHammer() {
-        let touchTap = new Hammer.Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 2 });
         let touchMove = new Hammer.Pan({ event: 'move', pointers: 1, direction: Hammer.DIRECTION_ALL, threshold: 0 });
-        let touchTilt =  new Hammer.Pan({ event: 'tilt', pointers: 2, direction: Hammer.DIRECTION_VERTICAL, threshold: 0 });
-        let touchRotate = new Hammer.Rotate({ event: 'rotate', pointers: 2, threshold: 0 });
-        let touchZoom = new Hammer.Pinch({ event: 'zoom', pointers: 2, threshold: 0 });
-
-        touchMove.recognizeWith(touchRotate);
-        touchMove.recognizeWith(touchTilt);
-        touchMove.recognizeWith(touchZoom);
-        touchTilt.recognizeWith(touchRotate);
-        touchTilt.recognizeWith(touchZoom);
-        touchRotate.recognizeWith(touchZoom);
-
-        this.hammer.add(touchTap);
-        this.hammer.add(touchTilt);
         this.hammer.add(touchMove);
-        this.hammer.add(touchRotate);
-        this.hammer.add(touchZoom);
     }
 
     onContextMenu = evt => {

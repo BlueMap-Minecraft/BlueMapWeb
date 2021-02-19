@@ -116,7 +116,7 @@ export class ControlsManager {
 		if (this.mapViewer.map) {
 			let triggerDistance = 1;
 			if (valueChanged) {
-				triggerDistance = this.mapViewer.loadedLowresViewDistance * 0.8;
+				triggerDistance = this.mapViewer.loadedLowresViewDistance * 0.5;
 			}
 			if (
 				Math.abs(this.lastMapUpdatePosition.x - this.position.x) >= triggerDistance ||
@@ -126,6 +126,15 @@ export class ControlsManager {
 				this.mapViewer.loadMapArea(this.position.x, this.position.z);
 			}
 		}
+	}
+
+	/**
+	 * Triggers an interaction on the screen (map), e.g. a mouse-click
+	 * @param screenPosition {THREE.Vector2} - Clicked position on the screen (usually event.x, event.y)
+	 * @param data {object} - Custom event data that will be added to the interaction-event
+	 */
+	handleMapInteraction(screenPosition, data = {}) {
+		this.mapViewer.handleMapInteraction(screenPosition, data);
 	}
 
 	isValueChanged() {

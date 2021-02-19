@@ -45,6 +45,8 @@ export class TileLoader {
                     object.position.set(tileX * tileSize.x + translate.x, 0, tileZ * tileSize.z + translate.z);
                     object.scale.set(scale.x, 1, scale.z);
 
+                    object.userData.tileUrl = this.tilePath + pathFromCoords(tileX, tileZ) + '.json';
+
                     object.updateMatrixWorld(true);
 
                     resolve(object);

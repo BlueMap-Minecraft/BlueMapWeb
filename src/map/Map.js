@@ -14,14 +14,19 @@ export class Map {
 	/**
 	 * @param id {string}
 	 * @param dataUrl {string}
+	 * @param settingsUrl {string}
+	 * @param texturesUrl {string}
 	 * @param events {EventTarget}
 	 */
-	constructor(id, dataUrl, events = null) {
+	constructor(id, dataUrl, settingsUrl, texturesUrl,  events = null) {
 		Object.defineProperty( this, 'isMap', { value: true } );
 
 		this.id = id;
 		this.events = events;
 		this.dataUrl = dataUrl;
+
+		this.settingsUrl = settingsUrl;
+		this.texturesUrl = texturesUrl;
 
 		this.name = this.id;
 		this.world = "-";
@@ -40,9 +45,6 @@ export class Map {
 			scale: {x: 1, z: 1},
 			translate: {x: 2, z: 2}
 		};
-
-		this.scene = new Scene();
-		this.scene.autoUpdate = false;
 
 		this.raycaster = new Raycaster();
 
@@ -111,8 +113,11 @@ export class Map {
 
                 this.hiresMaterial = this.createHiresMaterial(hiresVertexShader, hiresFragmentShader, uniforms, textures);
 
-                this.hiresTileManager = new TileManager(this.scene, new TileLoader(`${this.dataUrl}hires/`, this.hiresMaterial, this.hires, 1), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
-                this.lowresTileManager = new TileManager(this.scene, new TileLoader(`${this.dataUrl}lowres/`, this.lowresMaterial, this.lowres, 2), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.dataUrl}hires/`, this.hiresMaterial, this.hires), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
+                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.dataUrl}lowres/`, this.lowresMaterial, this.lowres), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+
+                this.hiresTileManager.scene.autoUpdate = false;
+                this.lowresTileManager.scene.autoUpdate = false;
 
                 alert(this.events, `Map '${this.id}' is loaded.`, "fine");
             });
@@ -165,7 +170,7 @@ export class Map {
 
             let loader = new FileLoader();
             loader.setResponseType("json");
-            loader.load(this.dataUrl + "../settings.json",
+            loader.load(this.settingsUrl,
                 settings => {
                     if (settings.maps && settings.maps[this.id]) {
                         resolve(settings.maps[this.id]);
@@ -189,7 +194,7 @@ export class Map {
 
 			let loader = new FileLoader();
 			loader.setResponseType("json");
-			loader.load(this.dataUrl + "../textures.json",
+			loader.load(this.texturesUrl,
 				resolve,
 				() => {},
 				() => reject(`Failed to load the textures.json for map: ${this.id}`)

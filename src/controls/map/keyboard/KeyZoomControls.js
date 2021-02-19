@@ -6,9 +6,11 @@ export class KeyZoomControls {
     static KEYS = {
         IN: [
             new KeyCombination("NumpadAdd"),
+            new KeyCombination("Insert"),
         ],
         OUT: [
             new KeyCombination("NumpadSubtract"),
+            new KeyCombination("Home"),
         ],
     }
 
@@ -50,8 +52,8 @@ export class KeyZoomControls {
      * @param map {Map}
      */
     update(delta, map) {
-        if (this.in) this.deltaZoom += 1;
-        if (this.out) this.deltaZoom -= 1;
+        if (this.in) this.deltaZoom -= 1;
+        if (this.out) this.deltaZoom += 1;
 
         if (this.deltaZoom === 0) return;
 
