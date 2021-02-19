@@ -22,7 +22,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
 import { Vector2 } from 'three';
 import  { Tile } from './Tile.js';
 import {alert, hashTile} from '../util/Utils.js';
