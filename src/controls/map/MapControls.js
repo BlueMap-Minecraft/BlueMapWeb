@@ -28,7 +28,7 @@ import {MouseZoomControls} from "./mouse/MouseZoomControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
 import {MouseAngleControls} from "./mouse/MouseAngleControls";
 import {MathUtils, Vector2} from "three";
-import {Manager} from "hammerjs";
+import {Manager, Pan, Pinch, Rotate, Tap, DIRECTION_ALL, DIRECTION_VERTICAL} from "hammerjs";
 import {animate, EasingFunctions, softClamp} from "../../util/Utils";
 import {MapHeightControls} from "./MapHeightControls";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
@@ -244,11 +244,11 @@ export class MapControls {
     }
 
     initializeHammer() {
-        let touchTap = new Hammer.Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 2 });
-        let touchMove = new Hammer.Pan({ event: 'move', pointers: 1, direction: Hammer.DIRECTION_ALL, threshold: 0 });
-        let touchTilt =  new Hammer.Pan({ event: 'tilt', pointers: 2, direction: Hammer.DIRECTION_VERTICAL, threshold: 0 });
-        let touchRotate = new Hammer.Rotate({ event: 'rotate', pointers: 2, threshold: 0 });
-        let touchZoom = new Hammer.Pinch({ event: 'zoom', pointers: 2, threshold: 0 });
+        let touchTap = new Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 2 });
+        let touchMove = new Pan({ event: 'move', pointers: 1, direction: DIRECTION_ALL, threshold: 0 });
+        let touchTilt =  new Pan({ event: 'tilt', pointers: 2, direction: DIRECTION_VERTICAL, threshold: 0 });
+        let touchRotate = new Rotate({ event: 'rotate', pointers: 2, threshold: 0 });
+        let touchZoom = new Pinch({ event: 'zoom', pointers: 2, threshold: 0 });
 
         touchMove.recognizeWith(touchRotate);
         touchMove.recognizeWith(touchTilt);

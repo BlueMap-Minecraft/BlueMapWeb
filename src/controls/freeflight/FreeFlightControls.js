@@ -24,7 +24,7 @@
  */
 
 import {MathUtils, Vector2} from "three";
-import {Manager} from "hammerjs";
+import {Manager, Pan, DIRECTION_ALL} from "hammerjs";
 import {animate, EasingFunctions} from "../../util/Utils";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
@@ -129,7 +129,7 @@ export class FreeFlightControls {
     }
 
     initializeHammer() {
-        let touchMove = new Hammer.Pan({ event: 'move', pointers: 1, direction: Hammer.DIRECTION_ALL, threshold: 0 });
+        let touchMove = new Pan({ event: 'move', pointers: 1, direction: DIRECTION_ALL, threshold: 0 });
         this.hammer.add(touchMove);
     }
 
