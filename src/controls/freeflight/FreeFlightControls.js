@@ -24,7 +24,8 @@
  */
 
 import {MathUtils, Vector2} from "three";
-import {animate, EasingFunctions, softMin} from "../../util/Utils";
+import {Manager} from "hammerjs";
+import {animate, EasingFunctions} from "../../util/Utils";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
 import {MouseAngleControls} from "./mouse/MouseAngleControls";
@@ -40,7 +41,7 @@ export class FreeFlightControls {
         this.target = target;
         this.manager = null;
 
-        this.hammer = new Hammer.Manager(this.target);
+        this.hammer = new Manager(this.target);
         this.initializeHammer();
 
         this.keyMove = new KeyMoveControls(this.target, 0.5, 0.1);

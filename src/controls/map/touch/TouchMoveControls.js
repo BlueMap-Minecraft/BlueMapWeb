@@ -31,7 +31,7 @@ export class TouchMoveControls {
     static tempVec2_1 = new Vector2();
 
     /**
-     * @param hammer {Hammer.Manager}
+     * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */

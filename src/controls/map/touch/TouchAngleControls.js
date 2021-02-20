@@ -28,7 +28,7 @@ import {MathUtils} from "three";
 export class TouchAngleControls {
 
     /**
-     * @param hammer {Hammer.Manager}
+     * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */

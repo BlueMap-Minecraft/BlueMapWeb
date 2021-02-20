@@ -26,7 +26,7 @@
 export class TouchZoomControls {
 
     /**
-     * @param hammer {Hammer.Manager}
+     * @param hammer {Manager}
      */
     constructor(hammer) {
         this.hammer = hammer;

@@ -28,6 +28,7 @@ import {MouseZoomControls} from "./mouse/MouseZoomControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
 import {MouseAngleControls} from "./mouse/MouseAngleControls";
 import {MathUtils, Vector2} from "three";
+import {Manager} from "hammerjs";
 import {animate, EasingFunctions, softClamp} from "../../util/Utils";
 import {MapHeightControls} from "./MapHeightControls";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
@@ -54,7 +55,7 @@ export class MapControls {
 
         this.started = false;
 
-        this.hammer = new Hammer.Manager(this.rootElement);
+        this.hammer = new Manager(this.rootElement);
         this.initializeHammer();
 
         //controls

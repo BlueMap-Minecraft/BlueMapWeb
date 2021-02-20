@@ -28,7 +28,7 @@ import {MathUtils} from "three";
 export class TouchRotateControls {
 
     /**
-     * @param hammer {Hammer.Manager}
+     * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */
