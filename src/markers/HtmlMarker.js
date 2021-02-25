@@ -34,9 +34,9 @@ export class HtmlMarker extends Marker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isHtmlMarker', {value: true});
-        this.markerType = "html";
+        this.data.type = "html";
 
-        this.elementObject = new CSS2DObject(htmlToElement(`<div id="bm-marker-${this.markerId}" class="bm-marker-${this.markerType}"></div>`));
+        this.elementObject = new CSS2DObject(htmlToElement(`<div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}"></div>`));
         this.elementObject.onBeforeRender = (renderer, scene, camera) => this.onBeforeRender(renderer, scene, camera);
 
         this.fadeDistanceMin = 0;

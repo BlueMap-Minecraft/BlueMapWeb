@@ -39,7 +39,7 @@ export class ExtrudeMarker extends ObjectMarker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isExtrudeMarker', {value: true});
-        this.markerType = "extrude";
+        this.data.type = "extrude";
 
         let zero = new Vector2();
         let shape = new Shape([zero, zero, zero]);

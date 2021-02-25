@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import {PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer} from "three";
+import {Color, PerspectiveCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer} from "three";
 import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
 import {ControlsManager} from "./controls/ControlsManager";
@@ -35,6 +35,7 @@ import {LOWRES_VERTEX_SHADER} from "./map/lowres/LowresVertexShader";
 import {LOWRES_FRAGMENT_SHADER} from "./map/lowres/LowresFragmentShader";
 import {CombinedCamera} from "./util/CombinedCamera";
 import {CSS2DRenderer} from "./util/CSS2DRenderer";
+import {MarkerSet} from "./markers/MarkerSet";
 
 export class MapViewer {
 
@@ -48,28 +49,32 @@ export class MapViewer {
 		this.rootElement = element;
 		this.events = events;
 
+		this.data = {
+			map: null,
+			camera: null,
+			controlsManager: null,
+			uniforms: {
+				sunlightStrength: { value: 1 },
+				ambientLight: { value: 0 },
+				skyColor: { value: new Color(0.5, 0.5, 1) },
+				hiresTileMap: {
+					value: {
+						map: null,
+						size: TileManager.tileMapSize,
+						scale: new Vector2(1, 1),
+						translate: new Vector2(),
+						pos: new Vector2(),
+					}
+				}
+			},
+			superSampling: 1,
+			loadedCenter: new Vector2(0, 0),
+			loadedHiresViewDistance: 200,
+			loadedLowresViewDistance: 2000,
+		}
+
 		this.stats = new Stats();
 		this.stats.hide();
-
-		this.superSamplingValue = 1;
-		this.loadedCenter = new Vector2(0, 0);
-		this.loadedHiresViewDistance = 200;
-		this.loadedLowresViewDistance = 2000;
-
-		// uniforms
-		this.uniforms = {
-			sunlightStrength: { value: 1 },
-			ambientLight: { value: 0 },
-			hiresTileMap: {
-				value: {
-					map: null,
-					size: TileManager.tileMapSize,
-					scale: new Vector2(1, 1),
-					translate: new Vector2(),
-					pos: new Vector2(),
-				}
-			}
-		};
 
 		// renderer
 		this.renderer = new WebGLRenderer({
@@ -79,12 +84,12 @@ export class MapViewer {
 			logarithmicDepthBuffer: true,
 		});
 		this.renderer.autoClear = false;
-		this.renderer.uniforms = this.uniforms;
+		this.renderer.uniforms = this.data.uniforms;
 
 		// CSS2D renderer
 		this.css2dRenderer = new CSS2DRenderer();
 
-		this.skyboxScene = new SkyboxScene();
+		this.skyboxScene = new SkyboxScene(this.data.uniforms);
 
 		this.camera = new CombinedCamera(75, 1, 0.1, 10000, 0);
 		this.skyboxCamera = new PerspectiveCamera(75, 1, 0.1, 10000);
@@ -98,7 +103,7 @@ export class MapViewer {
 		/** @type {Map} */
 		this.map = null;
 
-		this.markerScene = new Scene();
+		this.markers = new MarkerSet("bm-root");
 
 		this.lastFrame = 0;
 
@@ -142,7 +147,7 @@ export class MapViewer {
 	 */
 	handleContainerResize = () => {
 		this.renderer.setSize(this.rootElement.clientWidth, this.rootElement.clientHeight);
-		this.renderer.setPixelRatio(window.devicePixelRatio * this.superSamplingValue);
+		this.renderer.setPixelRatio(window.devicePixelRatio * this.superSampling);
 
 		this.css2dRenderer.setSize(this.rootElement.clientWidth, this.rootElement.clientHeight);
 
@@ -170,7 +175,7 @@ export class MapViewer {
 			this.raycaster.setFromCamera(normalizedScreenPos, this.camera);
 
 			// check Object3D interactions
-			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.map.lowresTileManager.scene, this.markerScene], true);
+			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.map.lowresTileManager.scene, this.markers], true);
 			let covered = false;
 			for (let i = 0; i < intersects.length; i++) {
 				if (intersects[i].object){
@@ -252,7 +257,7 @@ export class MapViewer {
 
 		if (this.map && this.map.isLoaded) {
 			//update uniforms
-			this.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
+			this.data.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
 
 			this.renderer.render(this.map.lowresTileManager.scene, this.camera);
 			this.renderer.clearDepth();
@@ -263,8 +268,8 @@ export class MapViewer {
 		}
 
 		// render markers
-		this.renderer.render(this.markerScene, this.camera);
-		this.css2dRenderer.render(this.markerScene, this.camera);
+		this.renderer.render(this.markers, this.camera);
+		this.css2dRenderer.render(this.markers, this.camera);
 	}
 
 	/**
@@ -278,15 +283,13 @@ export class MapViewer {
 		this.map = map;
 
 		if (this.map && this.map.isMap) {
-			return map.load(HIRES_VERTEX_SHADER, HIRES_FRAGMENT_SHADER, LOWRES_VERTEX_SHADER, LOWRES_FRAGMENT_SHADER, this.uniforms)
+			return map.load(HIRES_VERTEX_SHADER, HIRES_FRAGMENT_SHADER, LOWRES_VERTEX_SHADER, LOWRES_FRAGMENT_SHADER, this.data.uniforms)
 				.then(() => {
-					this.skyboxScene.ambientLight = map.ambientLight;
-					this.skyboxScene.skyColor = map.skyColor;
-
-					this.uniforms.ambientLight.value = map.ambientLight;
-					this.uniforms.hiresTileMap.value.map = map.hiresTileManager.tileMap.texture;
-					this.uniforms.hiresTileMap.value.scale.set(map.hires.tileSize.x, map.hires.tileSize.z);
-					this.uniforms.hiresTileMap.value.translate.set(map.hires.translate.x, map.hires.translate.z);
+					this.data.uniforms.skyColor.value = map.data.skyColor;
+					this.data.uniforms.ambientLight.value = map.data.ambientLight;
+					this.data.uniforms.hiresTileMap.value.map = map.hiresTileManager.tileMap.texture;
+					this.data.uniforms.hiresTileMap.value.scale.set(map.data.hires.tileSize.x, map.data.hires.tileSize.z);
+					this.data.uniforms.hiresTileMap.value.translate.set(map.data.hires.translate.x, map.data.hires.translate.z);
 
 					setTimeout(this.updateLoadedMapArea);
 
@@ -306,13 +309,13 @@ export class MapViewer {
 	 * Loads the given area on the map (and unloads everything outside that area)
 	 * @param centerX {number}
 	 * @param centerZ {number}
-	 * @param hiresViewDistance {number}
-	 * @param lowresViewDistance {number}
+	 * @param hiresViewDistance {number?}
+	 * @param lowresViewDistance {number?}
 	 */
 	loadMapArea(centerX, centerZ, hiresViewDistance = -1, lowresViewDistance = -1) {
-		this.loadedCenter.set(centerX, centerZ);
-		if (hiresViewDistance >= 0) this.loadedHiresViewDistance = hiresViewDistance;
-		if (lowresViewDistance >= 0) this.loadedLowresViewDistance = lowresViewDistance;
+		this.data.loadedCenter.set(centerX, centerZ);
+		if (hiresViewDistance >= 0) this.data.loadedHiresViewDistance = hiresViewDistance;
+		if (lowresViewDistance >= 0) this.data.loadedLowresViewDistance = lowresViewDistance;
 
 		this.updateLoadedMapArea();
 	}
@@ -322,22 +325,67 @@ export class MapViewer {
 	 */
 	updateLoadedMapArea = () => {
 		if (!this.map) return;
-		this.map.loadMapArea(this.loadedCenter.x, this.loadedCenter.y, this.loadedHiresViewDistance, this.loadedLowresViewDistance);
+		this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, this.data.loadedHiresViewDistance, this.data.loadedLowresViewDistance);
 	}
 
 	/**
 	 * @returns {number}
 	 */
 	get superSampling() {
-		return this.superSamplingValue;
+		return this.data.superSampling;
 	}
 
 	/**
 	 * @param value {number}
 	 */
 	set superSampling(value) {
-		this.superSamplingValue = value;
+		this.data.superSampling = value;
 		this.handleContainerResize();
+	}
+
+	/**
+	 * @returns {CombinedCamera}
+	 */
+	get camera() {
+		return this._camera;
+	}
+
+	/**
+	 * @param value {CombinedCamera}
+	 */
+	set camera(value) {
+		this._camera = value;
+		this.data.camera = value.data;
+	}
+
+	/**
+	 * @returns {ControlsManager}
+	 */
+	get controlsManager() {
+		return this._controlsManager;
+	}
+
+	/**
+	 * @param value {ControlsManager}
+	 */
+	set controlsManager(value) {
+		this._controlsManager = value;
+		this.data.controlsManager = value.data;
+	}
+
+	/**
+	 * @returns {Map}
+	 */
+	get map() {
+		return this._map;
+	}
+
+	/**
+	 * @param value {Map}
+	 */
+	set map(value) {
+		this._map = value;
+		if (value) this.data.map = value.data;
 	}
 
 }

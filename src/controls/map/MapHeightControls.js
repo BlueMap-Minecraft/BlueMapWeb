@@ -41,9 +41,6 @@ export class MapHeightControls {
         this.targetHeight = 0;
         this.cameraHeight = 0;
 
-        this.lastTarget = new Vector2();
-        this.lastTargetTerrainHeight = 0;
-
         this.minCameraHeight = 0;
         this.distanceTagretHeight = 0;
     }
@@ -73,12 +70,7 @@ export class MapHeightControls {
         let targetSmoothing = this.targetHeightStiffness / (16.666 / delta);
         targetSmoothing = MathUtils.clamp(targetSmoothing, 0, 1);
 
-        let targetTerrainHeight = this.lastTargetTerrainHeight;
-        if (this.lastTarget.x !== this.manager.position.x || this.lastTarget.y !== this.manager.position.z){
-            targetTerrainHeight = map.terrainHeightAt(this.manager.position.x, this.manager.position.z) || 0;
-            this.lastTargetTerrainHeight = targetTerrainHeight;
-            this.lastTarget.set(this.manager.position.x, this.manager.position.z);
-        }
+        let targetTerrainHeight = map.terrainHeightAt(this.manager.position.x, this.manager.position.z) + 3 || 0;
 
         let targetDelta = targetTerrainHeight - this.targetHeight;
         this.targetHeight += targetDelta * targetSmoothing;

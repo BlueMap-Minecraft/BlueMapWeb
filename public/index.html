@@ -68,16 +68,16 @@
         loadMaps("data/", bluemap.events).then(loadedMaps => {
             maps = loadedMaps;
 
-            markerManager = new BlueMap.MarkerFileManager(bluemap.markerScene, "data/markers.json", maps[0].id, bluemap.events);
+            markerManager = new BlueMap.MarkerFileManager(bluemap.markers, "data/markers.json", maps[0].data.id, bluemap.events);
             markerManager.update();
             markerManager.setAutoUpdateInterval(1000 * 10);
 
-            playerManager = new BlueMap.PlayerMarkerManager(bluemap.markerScene, "live/players", "", bluemap.events);
+            playerManager = new BlueMap.PlayerMarkerManager(bluemap.markers, "live/players", "", bluemap.events);
             playerManager.update();
             playerManager.setAutoUpdateInterval(1000);
 
             bluemap.switchMap(maps[0]).then(() => {
-                playerManager.worldId = maps[0].world;
+                playerManager.worldId = maps[0].data.world;
             });
         });
     </script>

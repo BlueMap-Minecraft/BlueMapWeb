@@ -33,12 +33,20 @@ export class Marker extends Object3D {
         super();
         Object.defineProperty(this, 'isMarker', {value: true});
 
-        this.markerId = markerId;
-        this.markerType = "marker";
+        this.data = {
+            id: markerId,
+            type: "marker",
+            position: this.position
+        };
 
+        // redirect parent properties
+        Object.defineProperty(this, "position", {
+            get() { return this.data.position },
+            set(value) { this.data.position = value }
+        });
     }
 
-    dispose() {};
+    dispose() {}
 
     /**
      * Updates this marker from the provided data object, usually parsed form json from a markers.json

@@ -45,29 +45,28 @@ export class Map {
 	constructor(id, dataUrl, settingsUrl, texturesUrl,  events = null) {
 		Object.defineProperty( this, 'isMap', { value: true } );
 
-		this.id = id;
 		this.events = events;
-		this.dataUrl = dataUrl;
 
-		this.settingsUrl = settingsUrl;
-		this.texturesUrl = texturesUrl;
-
-		this.name = this.id;
-		this.world = "-";
-
-		this.startPos = {x: 0, z: 0};
-		this.skyColor = new Color();
-		this.ambientLight = 0;
-
-		this.hires = {
-			tileSize: {x: 32, z: 32},
-			scale: {x: 1, z: 1},
-			translate: {x: 2, z: 2}
-		};
-		this.lowres = {
-			tileSize: {x: 32, z: 32},
-			scale: {x: 1, z: 1},
-			translate: {x: 2, z: 2}
+		this.data = {
+			id: id,
+			dataUrl: dataUrl,
+			settingsUrl: settingsUrl,
+			texturesUrl: texturesUrl,
+			name: id,
+			world: "-",
+			startPos: {x: 0, z: 0},
+			skyColor: new Color(),
+			ambientLight: 0,
+			hires: {
+				tileSize: {x: 32, z: 32},
+				scale: {x: 1, z: 1},
+				translate: {x: 2, z: 2}
+			},
+			lowres: {
+				tileSize: {x: 32, z: 32},
+				scale: {x: 1, z: 1},
+				translate: {x: 2, z: 2}
+			}
 		};
 
 		this.raycaster = new Raycaster();
@@ -104,29 +103,29 @@ export class Map {
 
 		let settingsPromise = settingsFilePromise
 			.then(worldSettings => {
-				this.name = worldSettings.name ? worldSettings.name : this.name;
-				this.world = worldSettings.world ? worldSettings.world : this.world;
+				this.data.name = worldSettings.name ? worldSettings.name : this.data.name;
+				this.data.world = worldSettings.world ? worldSettings.world : this.data.world;
 
-				this.startPos = {...this.startPos, ...worldSettings.startPos};
-				this.skyColor.setRGB(
-					worldSettings.skyColor.r || this.skyColor.r,
-					worldSettings.skyColor.g || this.skyColor.g,
-					worldSettings.skyColor.b || this.skyColor.b,
+				this.data.startPos = {...this.data.startPos, ...worldSettings.startPos};
+				this.data.skyColor.setRGB(
+					worldSettings.skyColor.r || this.data.skyColor.r,
+					worldSettings.skyColor.g || this.data.skyColor.g,
+					worldSettings.skyColor.b || this.data.skyColor.b,
 				);
-				this.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : 0;
+				this.data.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : this.data.ambientLight;
 
 				if (worldSettings.hires === undefined) worldSettings.hires = {};
 				if (worldSettings.lowres === undefined) worldSettings.lowres = {};
 
-				this.hires = {
-					tileSize: {...this.hires.tileSize, ...worldSettings.hires.tileSize},
-					scale: {...this.hires.scale, ...worldSettings.hires.scale},
-					translate: {...this.hires.translate, ...worldSettings.hires.translate}
+				this.data.hires = {
+					tileSize: {...this.data.hires.tileSize, ...worldSettings.hires.tileSize},
+					scale: {...this.data.hires.scale, ...worldSettings.hires.scale},
+					translate: {...this.data.hires.translate, ...worldSettings.hires.translate}
 				};
-				this.lowres = {
-					tileSize: {...this.lowres.tileSize, ...worldSettings.lowres.tileSize},
-					scale: {...this.lowres.scale, ...worldSettings.lowres.scale},
-					translate: {...this.lowres.translate, ...worldSettings.lowres.translate}
+				this.data.lowres = {
+					tileSize: {...this.data.lowres.tileSize, ...worldSettings.lowres.tileSize},
+					scale: {...this.data.lowres.scale, ...worldSettings.lowres.scale},
+					translate: {...this.data.lowres.translate, ...worldSettings.lowres.translate}
 				};
 			});
 
@@ -137,13 +136,13 @@ export class Map {
 
                 this.hiresMaterial = this.createHiresMaterial(hiresVertexShader, hiresFragmentShader, uniforms, textures);
 
-                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.dataUrl}hires/`, this.hiresMaterial, this.hires), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
-                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.dataUrl}lowres/`, this.lowresMaterial, this.lowres), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}hires/`, this.hiresMaterial, this.data.hires), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
+                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}lowres/`, this.lowresMaterial, this.data.lowres), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
 
                 this.hiresTileManager.scene.autoUpdate = false;
                 this.lowresTileManager.scene.autoUpdate = false;
 
-                alert(this.events, `Map '${this.id}' is loaded.`, "fine");
+                alert(this.events, `Map '${this.data.id}' is loaded.`, "fine");
             });
 	}
 
@@ -170,15 +169,15 @@ export class Map {
 	loadMapArea(x, z, hiresViewDistance, lowresViewDistance) {
 		if (!this.isLoaded) return;
 
-		let hiresX = Math.floor((x - this.hires.translate.x) / this.hires.tileSize.x);
-		let hiresZ = Math.floor((z - this.hires.translate.z) / this.hires.tileSize.z);
-		let hiresViewX = Math.floor(hiresViewDistance / this.hires.tileSize.x);
-		let hiresViewZ = Math.floor(hiresViewDistance / this.hires.tileSize.z);
+		let hiresX = Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x);
+		let hiresZ = Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z);
+		let hiresViewX = Math.floor(hiresViewDistance / this.data.hires.tileSize.x);
+		let hiresViewZ = Math.floor(hiresViewDistance / this.data.hires.tileSize.z);
 
-		let lowresX = Math.floor((x - this.lowres.translate.x) / this.lowres.tileSize.x);
-		let lowresZ = Math.floor((z - this.lowres.translate.z) / this.lowres.tileSize.z);
-		let lowresViewX = Math.floor(lowresViewDistance / this.lowres.tileSize.x);
-		let lowresViewZ = Math.floor(lowresViewDistance / this.lowres.tileSize.z);
+		let lowresX = Math.floor((x - this.data.lowres.translate.x) / this.data.lowres.tileSize.x);
+		let lowresZ = Math.floor((z - this.data.lowres.translate.z) / this.data.lowres.tileSize.z);
+		let lowresViewX = Math.floor(lowresViewDistance / this.data.lowres.tileSize.x);
+		let lowresViewZ = Math.floor(lowresViewDistance / this.data.lowres.tileSize.z);
 
 		this.hiresTileManager.loadAroundTile(hiresX, hiresZ, hiresViewX, hiresViewZ);
 		this.lowresTileManager.loadAroundTile(lowresX, lowresZ, lowresViewX, lowresViewZ);
@@ -190,20 +189,20 @@ export class Map {
      */
     loadSettingsFile() {
         return new Promise((resolve, reject) => {
-            alert(this.events, `Loading settings for map '${this.id}'...`, "fine");
+            alert(this.events, `Loading settings for map '${this.data.id}'...`, "fine");
 
             let loader = new FileLoader();
             loader.setResponseType("json");
-            loader.load(this.settingsUrl,
+            loader.load(this.data.settingsUrl,
                 settings => {
-                    if (settings.maps && settings.maps[this.id]) {
-                        resolve(settings.maps[this.id]);
+                    if (settings.maps && settings.maps[this.data.id]) {
+                        resolve(settings.maps[this.data.id]);
                     } else {
-                        reject(`the settings.json does not contain informations for map: ${this.id}`);
+                        reject(`the settings.json does not contain informations for map: ${this.data.id}`);
                     }
                 },
                 () => {},
-                () => reject(`Failed to load the settings.json for map: ${this.id}`)
+                () => reject(`Failed to load the settings.json for map: ${this.data.id}`)
             )
         });
     }
@@ -214,14 +213,14 @@ export class Map {
 	 */
 	loadTexturesFile() {
 		return new Promise((resolve, reject) => {
-			alert(this.events, `Loading textures for map '${this.id}'...`, "fine");
+			alert(this.events, `Loading textures for map '${this.data.id}'...`, "fine");
 
 			let loader = new FileLoader();
 			loader.setResponseType("json");
-			loader.load(this.texturesUrl,
+			loader.load(this.data.texturesUrl,
 				resolve,
 				() => {},
-				() => reject(`Failed to load the textures.json for map: ${this.id}`)
+				() => reject(`Failed to load the textures.json for map: ${this.data.id}`)
 			)
 		});
 	}
@@ -343,10 +342,10 @@ export class Map {
 		this.raycaster.far = 300;
 		this.raycaster.layers.enableAll();
 
-		let hiresTileHash = hashTile(Math.floor((x - this.hires.translate.x) / this.hires.tileSize.x), Math.floor((z - this.hires.translate.z) / this.hires.tileSize.z));
+		let hiresTileHash = hashTile(Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x), Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z));
 		let tile = this.hiresTileManager.tiles.get(hiresTileHash);
 		if (!tile || !tile.model) {
-			let lowresTileHash = hashTile(Math.floor((x - this.lowres.translate.x) / this.lowres.tileSize.x), Math.floor((z - this.lowres.translate.z) / this.lowres.tileSize.z));
+			let lowresTileHash = hashTile(Math.floor((x - this.data.lowres.translate.x) / this.data.lowres.tileSize.x), Math.floor((z - this.data.lowres.translate.z) / this.data.lowres.tileSize.z));
 			tile = this.lowresTileManager.tiles.get(lowresTileHash);
 		}
 

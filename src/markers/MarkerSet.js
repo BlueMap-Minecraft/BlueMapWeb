@@ -22,22 +22,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import {Object3D} from "three";
+import {Scene} from "three";
 
-export class MarkerSet extends Object3D {
+export class MarkerSet extends Scene {
 
     /**
-     * @param markerSetId {string}
+     * @param id {string}
      */
-    constructor(markerSetId) {
+    constructor(id) {
         super();
         Object.defineProperty(this, 'isMarkerSet', {value: true});
 
-        this.markerSetId = markerSetId;
-        this.label = markerSetId;
+        this.data = {
+            id: id,
+            label: id,
+            toggleable: true,
+            defaultHide: false,
+            markerSets: [],
+            markers: [],
+        };
+    }
 
-        this.toggleable = true;
-        this.defaultHide = false;
+    add(...object) {
+        if (object.length === 1) { //super.add() will re-invoke this method for each array-entry if its more than one
+            let o = object[0];
+            if (o.isMarkerSet) {
+                this.data.markerSets.push(o.data);
+            }
+            if (o.isMarker) {
+                this.data.markers.push(o.data);
+            }
+        }
+
+        return super.add(...object);
+    }
+
+    remove(...object) {
+        if (object.length === 1) { //super.remove() will re-invoke this method for each array-entry if its more than one
+            let o = object[0];
+            if (o.isMarkerSet) {
+                let i = this.data.markerSets.indexOf(o.data);
+                if (i > -1) this.data.markerSets.splice(i, 1);
+            }
+            if (o.isMarker) {
+                let i = this.data.markers.indexOf(o.data);
+                if (i > -1) this.data.markers.splice(i, 1);
+            }
+        }
+
+        return super.remove(...object);
     }
 
     dispose() {

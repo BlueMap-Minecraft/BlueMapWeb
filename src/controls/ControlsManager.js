@@ -36,14 +36,20 @@ export class ControlsManager {
 	constructor(mapViewer, camera) {
 		Object.defineProperty( this, 'isControlsManager', { value: true } );
 
+		this.data = {
+			mapViewer: null,
+			camera: null,
+			controls: null,
+			position: new Vector3(0, 0, 0),
+			rotation: 0,
+			angle: 0,
+			tilt: 0,
+		};
+
 		this.mapViewer = mapViewer;
 		this.camera = camera;
 
-		this.position = new Vector3(0, 0, 0);
-		this.rotation = 0;
-		this.angle = 0;
-		this.tilt = 0;
-
+		/** @type {Vector3} */
 		this.lastPosition = this.position.clone();
 		this.lastRotation = this.rotation;
 		this.lastAngle = this.angle;
@@ -164,22 +170,22 @@ export class ControlsManager {
 
 	isValueChanged() {
 		return !(
-			this.position.equals(this.lastPosition) &&
-			this.rotation === this.lastRotation &&
-			this.angle === this.lastAngle &&
+			this.data.position.equals(this.lastPosition) &&
+			this.data.rotation === this.lastRotation &&
+			this.data.angle === this.lastAngle &&
 			this.distance === this.lastDistance &&
 			this.ortho === this.lastOrtho &&
-			this.tilt === this.lastTilt
+			this.data.tilt === this.lastTilt
 		);
 	}
 
 	resetValueChanged() {
-		this.lastPosition.copy(this.position);
-		this.lastRotation = this.rotation;
-		this.lastAngle = this.angle;
+		this.lastPosition.copy(this.data.position);
+		this.lastRotation = this.data.rotation;
+		this.lastAngle = this.data.angle;
 		this.lastDistance = this.distance;
 		this.lastOrtho = this.ortho;
-		this.lastTilt = this.tilt;
+		this.lastTilt = this.data.tilt;
 	}
 
 	/**
@@ -218,6 +224,7 @@ export class ControlsManager {
 			this._controls.stop();
 
 		this._controls = controls;
+		if (controls) this.data.controls = controls.data || null
 
 		if (this._controls && this._controls.start)
 			this._controls.start(this);
@@ -230,4 +237,89 @@ export class ControlsManager {
 		return this._controls;
 	}
 
+	/**
+	 * @returns {MapViewer}
+	 */
+	get mapViewer() {
+		return this._mapViewer;
+	}
+
+	/**
+	 * @param value {MapViewer}
+	 */
+	set mapViewer(value) {
+		this._mapViewer = value;
+		this.data.mapViewer = value.data;
+	}
+
+	/**
+	 * @returns {CombinedCamera}
+	 */
+	get camera() {
+		return this._camera;
+	}
+
+	/**
+	 * @param value {CombinedCamera}
+	 */
+	set camera(value) {
+		this._camera = value;
+		this.data.camera = value.data;
+	}
+
+	/**
+	 * @returns {Vector3}
+	 */
+	get position() {
+		return this.data.position;
+	}
+
+	/**
+	 * @param value {Vector3}
+	 */
+	set position(value) {
+		this.data.position = value;
+	}
+
+	/**
+	 * @returns {number}
+	 */
+	get rotation() {
+		return this.data.rotation;
+	}
+
+	/**
+	 * @param value {number}
+	 */
+	set rotation(value) {
+		this.data.rotation = value;
+	}
+
+	/**
+	 * @returns {number}
+	 */
+	get angle() {
+		return this.data.angle;
+	}
+
+	/**
+	 * @param value {number}
+	 */
+	set angle(value) {
+		this.data.angle = value;
+	}
+
+	/**
+	 * @returns {number}
+	 */
+	get tilt() {
+		return this.data.tilt;
+	}
+
+	/**
+	 * @param value {number}
+	 */
+	set tilt(value) {
+		this.data.tilt = value;
+	}
 }

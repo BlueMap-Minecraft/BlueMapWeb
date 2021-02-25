@@ -35,12 +35,12 @@ export class PlayerMarker extends Marker {
     constructor(markerId, playerUuid) {
         super(markerId);
         Object.defineProperty(this, 'isPlayerMarker', {value: true});
-        this.markerType = "player";
+        this.data.type = "player";
 
         this.playerUuid = playerUuid;
 
         this.elementObject = new CSS2DObject(htmlToElement(`
-<div id="bm-marker-${this.markerId}" class="bm-marker-${this.markerType}">
+<div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}">
     <img src="assets/playerheads/${this.playerUuid}.png" alt="playerhead" draggable="false">
     <div class="bm-player-name"></div>
 </div>

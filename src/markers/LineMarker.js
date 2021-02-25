@@ -37,7 +37,7 @@ export class LineMarker extends ObjectMarker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isLineMarker', {value: true});
-        this.markerType = "line";
+        this.data.type = "line";
 
         this.line = new LineMarkerLine([0, 0, 0]);
 

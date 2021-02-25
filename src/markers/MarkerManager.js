@@ -95,7 +95,7 @@ export class MarkerManager {
      * Removes all markers managed by this marker-manager
      */
     clear() {
-        this.markerSets.forEach(markerSet => this.removeMarkerSet(markerSet.markerSetId));
+        this.markerSets.forEach(markerSet => this.removeMarkerSet(markerSet.data.id));
     }
 
     /**
@@ -104,10 +104,10 @@ export class MarkerManager {
      * @param markerSet {MarkerSet}
      */
     addMarkerSet(markerSet) {
-        this.removeMarkerSet(markerSet.markerSetId);
+        this.removeMarkerSet(markerSet.data.id);
 
-        this.markerSets.set(markerSet.markerSetId, markerSet);
-        this.markerScene.add(markerSet)
+        this.markerSets.set(markerSet.data.id, markerSet);
+        this.markerScene.add(markerSet);
     }
 
     /**
@@ -132,9 +132,9 @@ export class MarkerManager {
      * @param marker {Marker}
      */
     addMarker(markerSet, marker) {
-        this.removeMarker(marker.markerId);
+        this.removeMarker(marker.data.id);
 
-        this.markers.set(marker.markerId, marker);
+        this.markers.set(marker.data.id, marker);
         markerSet.add(marker);
     }
 

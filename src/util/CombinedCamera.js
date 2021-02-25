@@ -36,8 +36,39 @@ export class CombinedCamera extends PerspectiveCamera {
     constructor(fov, aspect, near, far, ortho) {
         super(fov, aspect, near, far);
 
-        this.ortho = ortho;
-        this.distance = 1;
+        this.data = {
+            fov: this.fov,
+            aspect: this.aspect,
+            near: this.near,
+            far: this.far,
+            zoom: this.zoom,
+            ortho: ortho,
+            distance: 1,
+        };
+
+        // redirect parent properties
+        Object.defineProperty(this, "fov", {
+            get() { return this.data.fov },
+            set(value) { this.data.fov = value }
+        });
+        Object.defineProperty(this, "aspect", {
+            get() { return this.data.aspect },
+            set(value) { this.data.aspect = value }
+        });
+        Object.defineProperty(this, "near", {
+            get() { return this.data.near },
+            set(value) { this.data.near = value }
+        });
+        Object.defineProperty(this, "far", {
+            get() { return this.data.far },
+            set(value) { this.data.far = value }
+        });
+        Object.defineProperty(this, "zoom", {
+            get() { return this.data.zoom },
+            set(value) { this.data.zoom = value }
+        });
+
+        this.updateProjectionMatrix();
     }
 
     updateProjectionMatrix() {
@@ -46,6 +77,9 @@ export class CombinedCamera extends PerspectiveCamera {
 
         if (!this.perspectiveProjection)
             this.perspectiveProjection = new Matrix4();
+
+        if (!this.data)
+            this.data = {};
 
         //copied from PerspectiveCamera
         const near = this.near;
@@ -117,4 +151,31 @@ export class CombinedCamera extends PerspectiveCamera {
         //ignore
     }
 
+    /**
+     * @returns {number}
+     */
+    get ortho() {
+        return this.data.ortho;
+    }
+
+    /**
+     * @param value {number}
+     */
+    set ortho(value) {
+        this.data.ortho = value;
+    }
+
+    /**
+     * @returns {number}
+     */
+    get distance() {
+        return this.data.distance;
+    }
+
+    /**
+     * @param value {number}
+     */
+    set distance(value) {
+        this.data.distance = value;
+    }
 }

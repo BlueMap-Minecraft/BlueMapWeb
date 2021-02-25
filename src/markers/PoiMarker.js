@@ -32,9 +32,9 @@ export class PoiMarker extends HtmlMarker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isPoiMarker', {value: true});
-        this.markerType = "poi";
+        this.data.type = "poi";
 
-        this.html = `<img src="" alt="POI Icon (${this.markerId})" class="bm-marker-poi-icon" draggable="false" style="pointer-events: auto"><div class="bm-marker-poi-label"></div>`;
+        this.html = `<img src="" alt="POI Icon (${this.data.id})" class="bm-marker-poi-icon" draggable="false" style="pointer-events: auto"><div class="bm-marker-poi-label"></div>`;
 
         this.iconElement = this.element.getElementsByTagName("img").item(0);
         this.labelElement = this.element.getElementsByTagName("div").item(0);
@@ -43,13 +43,13 @@ export class PoiMarker extends HtmlMarker {
     }
 
     onClick(event) {
-        if (this.hightlight) return;
-        this.hightlight = true;
+        if (this.highlight) return;
+        this.highlight = true;
 
         let eventHandler = evt => {
             if (evt.path.includes(this.element)) return;
 
-            this.hightlight = false;
+            this.highlight = false;
 
             window.removeEventListener("mousedown", eventHandler);
             window.removeEventListener("touchstart", eventHandler);
@@ -67,7 +67,7 @@ export class PoiMarker extends HtmlMarker {
         return true;
     }
 
-    set hightlight(highlight) {
+    set highlight(highlight) {
         if (highlight) {
             this.element.classList.add("bm-marker-highlight");
         } else {
@@ -75,7 +75,7 @@ export class PoiMarker extends HtmlMarker {
         }
     }
 
-    get hightlight() {
+    get highlight() {
         return this.element.classList.contains("bm-marker-highlight");
     }
 
@@ -121,6 +121,5 @@ export class PoiMarker extends HtmlMarker {
         this.fadeDistanceMax = markerData.maxDistance !== undefined ? markerData.maxDistance : Number.MAX_VALUE;
 
     }
-
 
 }

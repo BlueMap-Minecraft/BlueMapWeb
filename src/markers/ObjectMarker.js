@@ -35,11 +35,11 @@ export class ObjectMarker extends Marker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isObjectMarker', {value: true});
-        this.markerType = "object";
+        this.data.type = "object";
 
-        this.label = null;
-        this.link = null;
-        this.newTab = true;
+        this.data.label = null;
+        this.data.link = null;
+        this.data.newTab = true;
     }
 
     onClick(event) {
@@ -49,11 +49,15 @@ export class ObjectMarker extends Marker {
             pos.sub(this.position);
         }
 
-        if (this.label) {
-            let popup = new LabelPopup(this.label);
+        if (this.data.label) {
+            let popup = new LabelPopup(this.data.label);
             popup.position.copy(pos);
             this.add(popup);
             popup.open();
+        }
+
+        if (this.data.link){
+            window.open(this.data.link, this.data.newTab ? '_blank' : '_self');
         }
 
         return true;

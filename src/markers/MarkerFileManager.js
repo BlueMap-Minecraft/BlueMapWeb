@@ -136,7 +136,7 @@ export class MarkerFileManager extends MarkerManager {
         let marker = this.markers.get(markerData.id);
 
         // create new if not existent of wrong type
-        if (!marker || marker.markerType !== markerData.type) {
+        if (!marker || marker.data.type !== markerData.type) {
             switch (markerData.type) {
                 case "shape" : marker = new ShapeMarker(markerData.id); break;
                 case "extrude" : marker = new ExtrudeMarker(markerData.id); break;

@@ -39,7 +39,7 @@ export class ShapeMarker extends ObjectMarker {
     constructor(markerId) {
         super(markerId);
         Object.defineProperty(this, 'isShapeMarker', {value: true});
-        this.markerType = "shape";
+        this.data.type = "shape";
 
         let zero = new Vector2();
         let shape = new Shape([zero, zero, zero]);
