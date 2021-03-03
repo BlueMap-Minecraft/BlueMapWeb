@@ -96,38 +96,10 @@ export class Map {
 	load(hiresVertexShader, hiresFragmentShader, lowresVertexShader, lowresFragmentShader, uniforms) {
 		this.unload()
 
-		let settingsFilePromise = this.loadSettingsFile();
+		let settingsPromise = this.loadSettings();
 		let textureFilePromise = this.loadTexturesFile();
 
 		this.lowresMaterial = this.createLowresMaterial(lowresVertexShader, lowresFragmentShader, uniforms);
-
-		let settingsPromise = settingsFilePromise
-			.then(worldSettings => {
-				this.data.name = worldSettings.name ? worldSettings.name : this.data.name;
-				this.data.world = worldSettings.world ? worldSettings.world : this.data.world;
-
-				this.data.startPos = {...this.data.startPos, ...worldSettings.startPos};
-				this.data.skyColor.setRGB(
-					worldSettings.skyColor.r || this.data.skyColor.r,
-					worldSettings.skyColor.g || this.data.skyColor.g,
-					worldSettings.skyColor.b || this.data.skyColor.b,
-				);
-				this.data.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : this.data.ambientLight;
-
-				if (worldSettings.hires === undefined) worldSettings.hires = {};
-				if (worldSettings.lowres === undefined) worldSettings.lowres = {};
-
-				this.data.hires = {
-					tileSize: {...this.data.hires.tileSize, ...worldSettings.hires.tileSize},
-					scale: {...this.data.hires.scale, ...worldSettings.hires.scale},
-					translate: {...this.data.hires.translate, ...worldSettings.hires.translate}
-				};
-				this.data.lowres = {
-					tileSize: {...this.data.lowres.tileSize, ...worldSettings.lowres.tileSize},
-					scale: {...this.data.lowres.scale, ...worldSettings.lowres.scale},
-					translate: {...this.data.lowres.translate, ...worldSettings.lowres.translate}
-				};
-			});
 
 		return Promise.all([settingsPromise, textureFilePromise])
             .then(values => {
@@ -144,6 +116,42 @@ export class Map {
 
                 alert(this.events, `Map '${this.data.id}' is loaded.`, "fine");
             });
+	}
+
+	/**
+	 * Loads the settings of this map
+	 * @returns {Promise<void>}
+	 */
+	loadSettings() {
+		return this.loadSettingsFile()
+			.then(worldSettings => {
+				this.data.name = worldSettings.name ? worldSettings.name : this.data.name;
+				this.data.world = worldSettings.world ? worldSettings.world : this.data.world;
+
+				this.data.startPos = {...this.data.startPos, ...worldSettings.startPos};
+				this.data.skyColor.setRGB(
+					worldSettings.skyColor.r !== undefined ? worldSettings.skyColor.r : this.data.skyColor.r,
+					worldSettings.skyColor.g !== undefined ? worldSettings.skyColor.g : this.data.skyColor.g,
+					worldSettings.skyColor.b !== undefined ? worldSettings.skyColor.b : this.data.skyColor.b
+				);
+				this.data.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : this.data.ambientLight;
+
+				if (worldSettings.hires === undefined) worldSettings.hires = {};
+				if (worldSettings.lowres === undefined) worldSettings.lowres = {};
+
+				this.data.hires = {
+					tileSize: {...this.data.hires.tileSize, ...worldSettings.hires.tileSize},
+					scale: {...this.data.hires.scale, ...worldSettings.hires.scale},
+					translate: {...this.data.hires.translate, ...worldSettings.hires.translate}
+				};
+				this.data.lowres = {
+					tileSize: {...this.data.lowres.tileSize, ...worldSettings.lowres.tileSize},
+					scale: {...this.data.lowres.scale, ...worldSettings.lowres.scale},
+					translate: {...this.data.lowres.translate, ...worldSettings.lowres.translate}
+				};
+
+				alert(this.events, `Settings for map '${this.data.id}' loaded.`, "fine");
+			});
 	}
 
 	onTileLoad = layer => tile => {
@@ -198,7 +206,7 @@ export class Map {
                     if (settings.maps && settings.maps[this.data.id]) {
                         resolve(settings.maps[this.data.id]);
                     } else {
-                        reject(`the settings.json does not contain informations for map: ${this.data.id}`);
+                        reject(`the settings.json does not contain information for map: ${this.data.id}`);
                     }
                 },
                 () => {},
@@ -268,7 +276,8 @@ export class Map {
 					textureImage: {
 						type: 't',
 						value: texture
-					}
+					},
+					transparent: { value: transparent }
 				},
 				vertexShader: vertexShader,
 				fragmentShader: fragmentShader,

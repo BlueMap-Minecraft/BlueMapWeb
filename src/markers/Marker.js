@@ -36,13 +36,18 @@ export class Marker extends Object3D {
         this.data = {
             id: markerId,
             type: "marker",
-            position: this.position
+            position: this.position,
+            visible: this.visible
         };
 
         // redirect parent properties
         Object.defineProperty(this, "position", {
             get() { return this.data.position },
             set(value) { this.data.position = value }
+        });
+        Object.defineProperty(this, "visible", {
+            get() { return this.data.visible },
+            set(value) { this.data.visible = value }
         });
     }
 

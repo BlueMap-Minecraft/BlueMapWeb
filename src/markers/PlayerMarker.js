@@ -37,11 +37,12 @@ export class PlayerMarker extends Marker {
         Object.defineProperty(this, 'isPlayerMarker', {value: true});
         this.data.type = "player";
 
-        this.playerUuid = playerUuid;
+        this.data.playerUuid = playerUuid;
+        this.data.name = playerUuid;
 
         this.elementObject = new CSS2DObject(htmlToElement(`
 <div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}">
-    <img src="assets/playerheads/${this.playerUuid}.png" alt="playerhead" draggable="false">
+    <img src="assets/playerheads/${this.data.playerUuid}.png" alt="playerhead" draggable="false">
     <div class="bm-player-name"></div>
 </div>
         `));
@@ -55,7 +56,7 @@ export class PlayerMarker extends Marker {
         });
 
         this.playerHeadElement.addEventListener('error', () => {
-            this.playerHeadElement.src = "assets/playerheads/steve.png";
+            this.playerHeadElement.src = "assets/steve.png";
         }, {once: true});
 
         this.add(this.elementObject);
@@ -65,11 +66,21 @@ export class PlayerMarker extends Marker {
      * @returns {Element}
      */
     get element() {
-        return this.elementObject.element;
+        return this.elementObject.element.getElementsByTagName("div")[0];
     }
 
     onBeforeRender(renderer, scene, camera) {
-        this.element.setAttribute("distance-data", Marker.calculateDistanceToCameraPlane(this.position, camera).toString());
+        let distance = Marker.calculateDistanceToCameraPlane(this.position, camera);
+
+        let value = "near";
+        if (distance > 1000) {
+            value = "med";
+        }
+        if (distance > 5000) {
+            value = "far";
+        }
+
+        this.element.setAttribute("distance-data", value);
     }
 
     /**
@@ -103,7 +114,7 @@ export class PlayerMarker extends Marker {
             }
             let deltaPos = {
                 x: (pos.x || 0) - startPos.x,
-                y: (pos.y || 0) - startPos.y,
+                y: ((pos.y || 0) + 1.8) - startPos.y,
                 z: (pos.z || 0) - startPos.z,
             }
             if (deltaPos.x || deltaPos.y || deltaPos.z) {
@@ -119,7 +130,8 @@ export class PlayerMarker extends Marker {
         }
 
         // update name
-        let name = markerData.name || this.playerUuid;
+        let name = markerData.name || this.data.playerUuid;
+        this.data.name = name;
         if (this.playerNameElement.innerHTML !== name)
             this.playerNameElement.innerHTML = name;
 
@@ -128,7 +140,8 @@ export class PlayerMarker extends Marker {
     dispose() {
         super.dispose();
 
-        if (this.element.parentNode) this.element.parentNode.removeChild(this.element);
+        let element = this.elementObject.element;
+        if (element.parentNode) element.parentNode.removeChild(element);
     }
 
 }

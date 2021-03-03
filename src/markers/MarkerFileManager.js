@@ -88,12 +88,16 @@ export class MarkerFileManager extends MarkerManager {
         if (!markerSet) {
             markerSet = new MarkerSet(markerSetData.id);
             this.addMarkerSet(markerSet);
+
+            if (markerSetData.defaultHide) {
+                markerSet.visible = false;
+            }
         }
 
         // update set info
-        markerSet.label = markerSetData.label || markerSetData.id;
-        markerSet.toggleable = !!markerSetData.toggleable;
-        markerSet.defaultHide = !!markerSetData.defaultHide;
+        markerSet.data.label = markerSetData.label || markerSetData.id;
+        markerSet.data.toggleable = !!markerSetData.toggleable;
+        markerSet.data.defaultHide = !!markerSetData.defaultHide;
 
         // update markers
         let updatedMarkers = new Set();

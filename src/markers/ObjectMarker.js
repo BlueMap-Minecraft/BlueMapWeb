@@ -80,11 +80,11 @@ export class ObjectMarker extends Marker {
         this.position.setZ(pos.z || 0);
 
         // update label
-        this.label = markerData.label || null;
+        this.data.label = markerData.label || null;
 
         // update link
-        this.link = markerData.link || null;
-        this.newTab = !!markerData.newTab;
+        this.data.link = markerData.link || null;
+        this.data.newTab = !!markerData.newTab;
 
     }
 

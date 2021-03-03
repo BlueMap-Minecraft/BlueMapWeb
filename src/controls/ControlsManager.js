@@ -147,8 +147,13 @@ export class ControlsManager {
 		if (this.mapViewer.map) {
 			let triggerDistance = 1;
 			if (valueChanged) {
-				triggerDistance = this.mapViewer.loadedLowresViewDistance * 0.5;
+				if (this.distance > 300) {
+					triggerDistance = this.mapViewer.data.loadedLowresViewDistance * 0.5;
+				} else {
+					triggerDistance = this.mapViewer.data.loadedHiresViewDistance * 0.5;
+				}
 			}
+
 			if (
 				Math.abs(this.lastMapUpdatePosition.x - this.position.x) >= triggerDistance ||
 				Math.abs(this.lastMapUpdatePosition.z - this.position.z) >= triggerDistance

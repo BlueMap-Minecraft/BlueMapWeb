@@ -9,12 +9,17 @@ import {
     Object3D, Vector2,
     Vector3
 } from "three";
+import {htmlToElement} from "./Utils";
 
 var CSS2DObject = function ( element ) {
 
     Object3D.call( this );
 
-    this.element = element;
+    this.element = document.createElement("div");
+    let parent = element.parentNode;
+    parent.replaceChild(this.element, element);
+    this.element.appendChild(element);
+
     this.element.style.position = 'absolute';
 
     this.anchor = new Vector2();

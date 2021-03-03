@@ -116,6 +116,7 @@ export class PlayerMarkerManager extends MarkerManager {
 
         if (!playerMarkerSet) {
             playerMarkerSet = new MarkerSet("bm-players");
+            playerMarkerSet.data.label = "Players";
             this.addMarkerSet(playerMarkerSet);
         }
 

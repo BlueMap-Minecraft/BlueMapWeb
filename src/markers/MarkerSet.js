@@ -40,7 +40,13 @@ export class MarkerSet extends Scene {
             defaultHide: false,
             markerSets: [],
             markers: [],
+            visible: this.visible,
         };
+
+        Object.defineProperty(this, "visible", {
+            get() { return this.data.visible },
+            set(value) { this.data.visible = value }
+        });
     }
 
     add(...object) {
@@ -74,8 +80,6 @@ export class MarkerSet extends Scene {
     }
 
     dispose() {
-        super.dispose();
-
         this.children.forEach(child => {
             if (child.dispose) child.dispose();
         });
