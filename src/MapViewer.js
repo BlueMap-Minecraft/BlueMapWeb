@@ -351,9 +351,6 @@ export class MapViewer {
 		this.updateLoadedMapArea();
 	}
 
-	/**
-	 * @private
-	 */
 	updateLoadedMapArea = () => {
 		if (!this.map) return;
 		this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, this.data.loadedHiresViewDistance, this.data.loadedLowresViewDistance);
