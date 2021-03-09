@@ -176,21 +176,44 @@ export class MapViewer {
 
 			// check Object3D interactions
 			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.map.lowresTileManager.scene, this.markers], true);
+			let hit = null;
+			let lowresHit = null;
+			let hiresHit = null;
 			let covered = false;
 			for (let i = 0; i < intersects.length; i++) {
 				if (intersects[i].object){
 					let object = intersects[i].object;
 
-					if (object.visible) {
+					// check if deeply-visible
+					let parent = object;
+					let visible = parent.visible;
+					while (visible && parent.parent){
+						parent = parent.parent;
+						visible = parent.visible;
+					}
+
+					if (visible) {
+						if (!hit) hit = intersects[i];
+
+						// find root-scene
+						let parentRoot = object;
+						while(parentRoot.parent) parentRoot = parentRoot.parent;
+
+						if (parentRoot === this.map.lowresTileManager.scene) {
+							if (!lowresHit) lowresHit = intersects[i];
+						}
+
+						if (parentRoot === this.map.hiresTileManager.scene) {
+							if (!hiresHit) hiresHit = intersects[i];
+						}
+
 						if (!covered || (object.material && !object.material.depthTest)) {
-							if (object.onClick({
+							if (object.onClick && object.onClick({
 								data: data,
 								intersection: intersects[i]
 							})) return;
 						}
 
-						let parentRoot = object;
-						while(parentRoot.parent) parentRoot = parentRoot.parent;
 						if (parentRoot !== this.map.lowresTileManager.scene) {
 							covered = true;
 						}
@@ -201,7 +224,11 @@ export class MapViewer {
 			// fire event
 			dispatchEvent(this.events, "bluemapMapInteraction", {
 				data: data,
-				intersections: intersects
+				hit: hit,
+				hiresHit: hiresHit,
+				lowresHit: lowresHit,
+				intersections: intersects,
+				ray: this.raycaster.ray
 			});
 		}
 	}
@@ -285,6 +312,10 @@ export class MapViewer {
 		if (this.map && this.map.isMap) {
 			return map.load(HIRES_VERTEX_SHADER, HIRES_FRAGMENT_SHADER, LOWRES_VERTEX_SHADER, LOWRES_FRAGMENT_SHADER, this.data.uniforms)
 				.then(() => {
+					for (let texture of this.map.loadedTextures){
+						this.renderer.initTexture(texture);
+					}
+
 					this.data.uniforms.skyColor.value = map.data.skyColor;
 					this.data.uniforms.ambientLight.value = map.data.ambientLight;
 					this.data.uniforms.hiresTileMap.value.map = map.hiresTileManager.tileMap.texture;

@@ -59,12 +59,17 @@ export class MarkerManager {
      * @param ms - interval in milliseconds
      */
     setAutoUpdateInterval(ms) {
-        if (this._updateInterval) clearInterval(this._updateInterval);
+        if (this._updateInterval) clearTimeout(this._updateInterval);
         if (ms > 0) {
             let autoUpdate = () => {
-                this.update().finally(() => {
-                    this._updateInterval = setTimeout(autoUpdate, ms);
-                });
+                this.update()
+                    .then(() => {
+                        this._updateInterval = setTimeout(autoUpdate, ms);
+                    })
+                    .catch(e => {
+                        alert(this.events, e, "warning");
+                        this._updateInterval = setTimeout(autoUpdate, Math.max(ms, 1000 * 15));
+                    });
             };
 
             this._updateInterval = setTimeout(autoUpdate, ms);
@@ -77,10 +82,7 @@ export class MarkerManager {
      */
     update() {
         return this.loadMarkerFile()
-            .then(markerFileData => this.updateFromData(markerFileData))
-            .catch(error => {
-                alert(this.events, error, "warning");
-            });
+            .then(markerFileData => this.updateFromData(markerFileData));
     }
 
     /**

@@ -38,6 +38,7 @@ export class ObjectMarker extends Marker {
         this.data.type = "object";
 
         this.data.label = null;
+        this.data.detail = null;
         this.data.link = null;
         this.data.newTab = true;
     }
@@ -49,8 +50,8 @@ export class ObjectMarker extends Marker {
             pos.sub(this.position);
         }
 
-        if (this.data.label) {
-            let popup = new LabelPopup(this.data.label);
+        if (this.data.detail || this.data.label) {
+            let popup = new LabelPopup(this.data.detail || this.data.label);
             popup.position.copy(pos);
             this.add(popup);
             popup.open();
@@ -67,6 +68,7 @@ export class ObjectMarker extends Marker {
      * @param markerData {{
      *      position: {x: number, y: number, z: number},
      *      label: string,
+     *      detail: string,
      *      link: string,
      *      newTab: boolean
      *      }}
@@ -82,10 +84,12 @@ export class ObjectMarker extends Marker {
         // update label
         this.data.label = markerData.label || null;
 
+        //update detail
+        this.data.detail = markerData.detail || null;
+
         // update link
         this.data.link = markerData.link || null;
         this.data.newTab = !!markerData.newTab;
-
     }
 
 }

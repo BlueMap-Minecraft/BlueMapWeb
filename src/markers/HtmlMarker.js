@@ -82,7 +82,7 @@ export class HtmlMarker extends Marker {
      * @returns {Element}
      */
     get element() {
-        return this.elementObject.element;
+        return this.elementObject.element.getElementsByTagName("div")[0];
     }
 
     /**

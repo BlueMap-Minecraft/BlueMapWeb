@@ -38,8 +38,18 @@ var CSS2DObject = function ( element ) {
 
     } );
 
-    this.element.addEventListener("click", event => this.onClick(event));
-    this.element.addEventListener("touch", event => this.onClick(event));
+    this.element.addEventListener("click", event => {
+        if (this.onClick(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+    this.element.addEventListener("touch", event => {
+        if (this.onClick(event)) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
 
 };
 

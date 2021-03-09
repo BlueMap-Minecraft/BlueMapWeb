@@ -43,7 +43,7 @@ export class PoiMarker extends HtmlMarker {
     }
 
     onClick(event) {
-        if (this.highlight) return;
+        if (this.highlight || !this.data.label) return true;
         this.highlight = true;
 
         let eventHandler = evt => {
@@ -102,12 +102,15 @@ export class PoiMarker extends HtmlMarker {
 
         // update anchor
         let anch = markerData.anchor || markerData.iconAnchor || {}; //"iconAnchor" for backwards compatibility
-        this.anchor.setX(anch.x || 0);
-        this.anchor.setY(anch.y || 0);
+        this.iconElement.style.transform = `translate(${-anch.x}px, ${-anch.y}px)`;
+        //this.anchor.setX(anch.x || 0);
+        //this.anchor.setY(anch.y || 0);
+
 
         // update label
-        if (this.labelElement.innerHTML !== markerData.label){
-            this.labelElement.innerHTML = markerData.label || "";
+        if (this.data.label !== markerData.label){
+            this.data.label = markerData.label || "";
+            this.labelElement.innerHTML = this.data.label || "";
         }
 
         // update icon

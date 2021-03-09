@@ -74,10 +74,15 @@ export class TileManager {
     loadAroundTile(x, z, viewDistanceX, viewDistanceZ) {
         this.unloaded = false;
 
+        let unloadTiles = false;
+        if (this.viewDistanceX > viewDistanceX || this.viewDistanceZ > viewDistanceZ) {
+            unloadTiles = true;
+        }
+
         this.viewDistanceX = viewDistanceX;
         this.viewDistanceZ = viewDistanceZ;
 
-        if (this.centerTile.x !== x || this.centerTile.y !== z) {
+        if (unloadTiles || this.centerTile.x !== x || this.centerTile.y !== z) {
             this.centerTile.set(x, z);
             this.removeFarTiles();
 

@@ -244,7 +244,7 @@ export class MapControls {
     }
 
     initializeHammer() {
-        let touchTap = new Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 2 });
+        let touchTap = new Tap({ event: 'tap', pointers: 1, taps: 1, threshold: 5 });
         let touchMove = new Pan({ event: 'move', pointers: 1, direction: DIRECTION_ALL, threshold: 0 });
         let touchTilt =  new Pan({ event: 'tilt', pointers: 2, direction: DIRECTION_VERTICAL, threshold: 0 });
         let touchRotate = new Rotate({ event: 'rotate', pointers: 2, threshold: 0 });

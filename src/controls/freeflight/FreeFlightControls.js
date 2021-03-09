@@ -142,8 +142,8 @@ export class FreeFlightControls {
     }
 
     onMouseUp = evt => {
-        if (this.clickStart.x !== evt.x) return;
-        if (this.clickStart.y !== evt.y) return;
+        if (Math.abs(this.clickStart.x - evt.x) > 5) return;
+        if (Math.abs(this.clickStart.y - evt.y) > 5) return;
 
         this.target.requestPointerLock();
     }

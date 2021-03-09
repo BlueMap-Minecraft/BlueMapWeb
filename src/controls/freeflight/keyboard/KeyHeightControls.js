@@ -35,6 +35,7 @@ export class KeyHeightControls {
         ],
         DOWN: [
             new KeyCombination("ShiftLeft"),
+            new KeyCombination("ShiftRight"),
             new KeyCombination("PageDown")
         ],
     }
