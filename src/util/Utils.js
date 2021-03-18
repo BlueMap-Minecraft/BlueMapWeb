@@ -89,6 +89,9 @@ const splitNumberToPath = num => {
  */
 export const hashTile = (x, z) => `x${x}z${z}`;
 
+export const generateCacheHash = () => {
+    return Math.round(Math.random() * 1000000);
+}
 
 /**
  * Dispatches an event to the element of this map-viewer
@@ -184,7 +187,7 @@ export const animate = function (animationFrame, durationMs = 1000, postAnimatio
                 this.lastFrame = time;
             }
 
-            let progress = MathUtils.clamp((time - this.animationStart) / durationMs, 0, 1);
+            let progress = durationMs === 0 ? 1 : MathUtils.clamp((time - this.animationStart) / durationMs, 0, 1);
             let deltaTime = time - this.lastFrame;
 
             animationFrame(progress, deltaTime);

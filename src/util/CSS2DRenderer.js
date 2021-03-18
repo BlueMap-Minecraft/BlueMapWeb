@@ -9,7 +9,7 @@ import {
     Object3D, Vector2,
     Vector3
 } from "three";
-import {htmlToElement} from "./Utils";
+import {dispatchEvent, htmlToElement} from "./Utils";
 
 var CSS2DObject = function ( element ) {
 
@@ -23,6 +23,8 @@ var CSS2DObject = function ( element ) {
     this.element.style.position = 'absolute';
 
     this.anchor = new Vector2();
+
+    this.events = null;
 
     this.addEventListener( 'removed', function () {
 
@@ -38,18 +40,33 @@ var CSS2DObject = function ( element ) {
 
     } );
 
-    this.element.addEventListener("click", event => {
-        if (this.onClick(event)) {
+    let lastClick = -1;
+    let handleClick = event => {
+        let doubleTap = false;
+
+        let now = Date.now();
+        if (now - lastClick < 500){
+            doubleTap = true;
+        }
+
+        lastClick = now;
+
+        let data = {doubleTap: doubleTap};
+
+        if (this.onClick( {event: event, data: data} )) {
             event.preventDefault();
             event.stopPropagation();
+        } else {
+            // fire event
+            dispatchEvent(this.events, "bluemapMapInteraction", {
+                data: data,
+                object: this,
+            });
         }
-    });
-    this.element.addEventListener("touch", event => {
-        if (this.onClick(event)) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    });
+    }
+
+    this.element.addEventListener("click", handleClick);
+    this.element.addEventListener("touch", handleClick);
 
 };
 
@@ -58,7 +75,7 @@ CSS2DObject.prototype.constructor = CSS2DObject;
 
 //
 
-var CSS2DRenderer = function () {
+var CSS2DRenderer = function (events = null) {
 
     var _this = this;
 
@@ -77,6 +94,8 @@ var CSS2DRenderer = function () {
     domElement.style.overflow = 'hidden';
 
     this.domElement = domElement;
+
+    this.events = events;
 
     this.getSize = function () {
 
@@ -103,6 +122,8 @@ var CSS2DRenderer = function () {
     var renderObject = function ( object, scene, camera, parentVisible ) {
 
         if ( object instanceof CSS2DObject ) {
+
+            object.events = _this.events;
 
             object.onBeforeRender( _this, scene, camera );
 

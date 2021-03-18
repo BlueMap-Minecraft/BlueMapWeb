@@ -41,14 +41,18 @@ export class FreeFlightControls {
         this.target = target;
         this.manager = null;
 
+        this.data = {
+
+        };
+
         this.hammer = new Manager(this.target);
         this.initializeHammer();
 
         this.keyMove = new KeyMoveControls(this.target, 0.5, 0.1);
         this.keyHeight = new KeyHeightControls(this.target, 0.5, 0.2);
-        this.mouseRotate = new MouseRotateControls(this.target, 0.002, -0.003, -0.002, 0.5);
-        this.mouseAngle = new MouseAngleControls(this.target, 0.002, -0.003, -0.002, 0.5);
-        this.touchPan = new TouchPanControls(this.hammer, 0.005, 0.15);
+        this.mouseRotate = new MouseRotateControls(this.target, 1.5, -2, -1.5, 0.5);
+        this.mouseAngle = new MouseAngleControls(this.target, 1.5, -2, -1.5, 0.5);
+        this.touchPan = new TouchPanControls(this.target, this.hammer, 5, 0.15);
 
         this.started = false;
 
@@ -74,24 +78,6 @@ export class FreeFlightControls {
         this.target.addEventListener("mousedown", this.onMouseDown);
         this.target.addEventListener("mouseup", this.onMouseUp);
         window.addEventListener("wheel", this.onWheel, {passive: true});
-
-        let startOrtho = this.manager.ortho;
-        let startDistance = this.manager.distance;
-        let startAngle = this.manager.angle;
-        let startY = this.manager.position.y;
-
-        let targetAngle = Math.PI / 2;
-
-        animate(progress => {
-            let smoothProgress = EasingFunctions.easeInOutQuad(progress);
-
-            this.manager.ortho = MathUtils.lerp(startOrtho, 0, progress);
-            this.manager.distance = MathUtils.lerp(startDistance, 0, smoothProgress);
-            this.manager.angle = MathUtils.lerp(startAngle, targetAngle, smoothProgress);
-            this.manager.position.y = MathUtils.lerp(startY, this.animationTargetHeight, smoothProgress);
-        }, 500, () => {
-            this.started = true;
-        });
     }
 
     stop() {
@@ -105,8 +91,6 @@ export class FreeFlightControls {
         this.target.removeEventListener("mousedown", this.onMouseDown);
         this.target.removeEventListener("mouseup", this.onMouseUp);
         window.removeEventListener("wheel", this.onWheel);
-
-        this.started = false;
     }
 
     /**
@@ -114,11 +98,6 @@ export class FreeFlightControls {
      * @param map {Map}
      */
     update(delta, map) {
-        if (!this.started) {
-            this.animationTargetHeight = map.terrainHeightAt(this.manager.position.x, this.manager.position.z) + 10;
-            return;
-        }
-
         this.keyMove.update(delta, map);
         this.keyHeight.update(delta, map);
         this.mouseRotate.update(delta, map);
@@ -126,6 +105,8 @@ export class FreeFlightControls {
         this.touchPan.update(delta, map);
 
         this.manager.angle = MathUtils.clamp(this.manager.angle, 0, Math.PI);
+        this.manager.distance = 0;
+        this.manager.ortho = 0;
     }
 
     initializeHammer() {
@@ -145,7 +126,10 @@ export class FreeFlightControls {
         if (Math.abs(this.clickStart.x - evt.x) > 5) return;
         if (Math.abs(this.clickStart.y - evt.y) > 5) return;
 
-        this.target.requestPointerLock();
+        document.body.requestFullscreen()
+            .finally(() => {
+                this.target.requestPointerLock();
+            });
     }
 
     onWheel = evt => {

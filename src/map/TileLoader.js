@@ -31,13 +31,14 @@ export class TileLoader {
      * @param tilePath {string}
      * @param material {THREE.Material | THREE.Material[]}
      * @param tileSettings {{
-	 *      tileSize: {x: number, z: number},
-	 *	    scale: {x: number, z: number},
+     *      tileSize: {x: number, z: number},
+     *	    scale: {x: number, z: number},
      *      translate: {x: number, z: number}
      * }}
+     * @param tileCacheHash {number}
      * @param layer {number}
      */
-    constructor(tilePath, material, tileSettings, layer = 0) {
+    constructor(tilePath, material, tileSettings, tileCacheHash = 0, layer = 0) {
         Object.defineProperty( this, 'isTileLoader', { value: true } );
 
         this.tilePath = tilePath;
@@ -46,6 +47,8 @@ export class TileLoader {
 
         this.layer = layer;
 
+        this.tileCacheHash = tileCacheHash;
+
         this.fileLoader = new FileLoader();
         this.fileLoader.setResponseType('json');
 
@@ -53,8 +56,10 @@ export class TileLoader {
     }
 
     load = (tileX, tileZ) => {
+        let tileUrl = this.tilePath + pathFromCoords(tileX, tileZ) + '.json';
+
         return new Promise((resolve, reject) => {
-            this.fileLoader.load(this.tilePath + pathFromCoords(tileX, tileZ) + '.json',
+            this.fileLoader.load(tileUrl + '?' + this.tileCacheHash,
                 geometryJson => {
                     if (!geometryJson.type || geometryJson.type !== 'BufferGeometry') reject({status: "empty"});
 
@@ -69,7 +74,7 @@ export class TileLoader {
                     object.position.set(tileX * tileSize.x + translate.x, 0, tileZ * tileSize.z + translate.z);
                     object.scale.set(scale.x, 1, scale.z);
 
-                    object.userData.tileUrl = this.tilePath + pathFromCoords(tileX, tileZ) + '.json';
+                    object.userData.tileUrl = tileUrl;
 
                     object.updateMatrixWorld(true);
 

@@ -42,6 +42,9 @@ export class MouseAngleControls {
 
         this.speed = speed;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplierY = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -53,12 +56,16 @@ export class MouseAngleControls {
         this.target.addEventListener("mousedown", this.onMouseDown);
         window.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("mouseup", this.onMouseUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
         this.target.removeEventListener("mousedown", this.onMouseDown);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -71,7 +78,7 @@ export class MouseAngleControls {
         let smoothing = this.stiffness / (16.666 / delta);
         smoothing = MathUtils.clamp(smoothing, 0, 1);
 
-        this.manager.angle += this.deltaAngle * smoothing * this.speed;
+        this.manager.angle += this.deltaAngle * smoothing * this.speed * this.pixelToSpeedMultiplierY;
 
         this.deltaAngle *= 1 - smoothing;
         if (Math.abs(this.deltaAngle) < 0.0001) {
@@ -114,6 +121,10 @@ export class MouseAngleControls {
      */
     onMouseUp = evt => {
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplierY = 1 / this.target.clientHeight;
     }
 
 }

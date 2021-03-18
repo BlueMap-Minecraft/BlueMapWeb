@@ -31,7 +31,7 @@ export class MouseMoveControls {
     static tempVec2_1 = new Vector2();
 
     /**
-     * @param target {EventTarget}
+     * @param target {Element}
      * @param speed {number}
      * @param stiffness {number}
      */
@@ -45,6 +45,10 @@ export class MouseMoveControls {
 
         this.speed = speed;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplierX = 0;
+        this.pixelToSpeedMultiplierY = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -56,12 +60,16 @@ export class MouseMoveControls {
         this.target.addEventListener("mousedown", this.onMouseDown);
         window.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("mouseup", this.onMouseUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
         this.target.removeEventListener("mousedown", this.onMouseDown);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -77,8 +85,8 @@ export class MouseMoveControls {
         let directionDelta = MouseMoveControls.tempVec2_1.copy(this.deltaPosition);
         directionDelta.rotateAround(VEC2_ZERO, this.manager.rotation);
 
-        this.manager.position.x += directionDelta.x * smoothing * this.manager.distance * this.speed;
-        this.manager.position.z += directionDelta.y * smoothing * this.manager.distance * this.speed;
+        this.manager.position.x += directionDelta.x * smoothing * this.manager.distance * this.speed * this.pixelToSpeedMultiplierX;
+        this.manager.position.z += directionDelta.y * smoothing * this.manager.distance * this.speed * this.pixelToSpeedMultiplierY;
 
         this.deltaPosition.multiplyScalar(1 - smoothing);
         if (this.deltaPosition.lengthSq() < 0.0001) {
@@ -122,6 +130,11 @@ export class MouseMoveControls {
      */
     onMouseUp = evt => {
         if (evt.button === 0) this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplierX = (1 / this.target.clientWidth) * (this.target.clientWidth / this.target.clientHeight);
+        this.pixelToSpeedMultiplierY = 1 / this.target.clientHeight;
     }
 
 }

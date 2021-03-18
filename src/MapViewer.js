@@ -27,7 +27,7 @@ import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
 import {ControlsManager} from "./controls/ControlsManager";
 import Stats from "./util/Stats";
-import {alert, dispatchEvent, elementOffset, htmlToElement} from "./util/Utils";
+import {alert, dispatchEvent, elementOffset, generateCacheHash, htmlToElement} from "./util/Utils";
 import {TileManager} from "./map/TileManager";
 import {HIRES_VERTEX_SHADER} from "./map/hires/HiresVertexShader";
 import {HIRES_FRAGMENT_SHADER} from "./map/hires/HiresFragmentShader";
@@ -73,6 +73,8 @@ export class MapViewer {
 			loadedLowresViewDistance: 2000,
 		}
 
+		this.tileCacheHash = generateCacheHash();
+
 		this.stats = new Stats();
 		this.stats.hide();
 
@@ -87,7 +89,7 @@ export class MapViewer {
 		this.renderer.uniforms = this.data.uniforms;
 
 		// CSS2D renderer
-		this.css2dRenderer = new CSS2DRenderer();
+		this.css2dRenderer = new CSS2DRenderer(this.events);
 
 		this.skyboxScene = new SkyboxScene(this.data.uniforms);
 
@@ -310,7 +312,7 @@ export class MapViewer {
 		this.map = map;
 
 		if (this.map && this.map.isMap) {
-			return map.load(HIRES_VERTEX_SHADER, HIRES_FRAGMENT_SHADER, LOWRES_VERTEX_SHADER, LOWRES_FRAGMENT_SHADER, this.data.uniforms)
+			return map.load(HIRES_VERTEX_SHADER, HIRES_FRAGMENT_SHADER, LOWRES_VERTEX_SHADER, LOWRES_FRAGMENT_SHADER, this.data.uniforms, this.tileCacheHash)
 				.then(() => {
 					for (let texture of this.map.loadedTextures){
 						this.renderer.initTexture(texture);
@@ -354,6 +356,16 @@ export class MapViewer {
 	updateLoadedMapArea = () => {
 		if (!this.map) return;
 		this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, this.data.loadedHiresViewDistance, this.data.loadedLowresViewDistance);
+	}
+
+	clearTileCache(newTileCacheHash) {
+		if (!newTileCacheHash) newTileCacheHash = generateCacheHash();
+
+		this.tileCacheHash = newTileCacheHash;
+		if (this.map) {
+			this.map.lowresTileManager.tileLoader.tileCacheHash = this.tileCacheHash;
+			this.map.hiresTileManager.tileLoader.tileCacheHash = this.tileCacheHash;
+		}
 	}
 
 	/**

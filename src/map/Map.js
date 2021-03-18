@@ -27,7 +27,7 @@ import {
 	FileLoader, FrontSide, NearestFilter, NearestMipMapLinearFilter, Raycaster,
 	Scene, ShaderMaterial, Texture, Vector2, Vector3, VertexColors
 } from "three";
-import {alert, dispatchEvent, hashTile, stringToImage} from "../util/Utils";
+import {alert, dispatchEvent, generateCacheHash, hashTile, stringToImage} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
 import {MarkerFileManager} from "../markers/MarkerFileManager";
@@ -42,7 +42,7 @@ export class Map {
 	 * @param texturesUrl {string}
 	 * @param events {EventTarget}
 	 */
-	constructor(id, dataUrl, settingsUrl, texturesUrl,  events = null) {
+	constructor(id, dataUrl, settingsUrl, texturesUrl, events = null) {
 		Object.defineProperty( this, 'isMap', { value: true } );
 
 		this.events = events;
@@ -91,9 +91,10 @@ export class Map {
 	 * @param lowresVertexShader {string}
 	 * @param lowresFragmentShader {string}
 	 * @param uniforms {object}
+	 * @param tileCacheHash {number}
 	 * @returns {Promise<void>}
 	 */
-	load(hiresVertexShader, hiresFragmentShader, lowresVertexShader, lowresFragmentShader, uniforms) {
+	load(hiresVertexShader, hiresFragmentShader, lowresVertexShader, lowresFragmentShader, uniforms, tileCacheHash = 0) {
 		this.unload()
 
 		let settingsPromise = this.loadSettings();
@@ -108,8 +109,8 @@ export class Map {
 
                 this.hiresMaterial = this.createHiresMaterial(hiresVertexShader, hiresFragmentShader, uniforms, textures);
 
-                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}hires/`, this.hiresMaterial, this.data.hires), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
-                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}lowres/`, this.lowresMaterial, this.data.lowres), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}hires/`, this.hiresMaterial, this.data.hires, tileCacheHash), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
+                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}lowres/`, this.lowresMaterial, this.data.lowres, tileCacheHash), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
 
                 this.hiresTileManager.scene.autoUpdate = false;
                 this.lowresTileManager.scene.autoUpdate = false;
@@ -201,7 +202,7 @@ export class Map {
 
             let loader = new FileLoader();
             loader.setResponseType("json");
-            loader.load(this.data.settingsUrl,
+            loader.load(this.data.settingsUrl + "?" + generateCacheHash(),
                 settings => {
                     if (settings.maps && settings.maps[this.data.id]) {
                         resolve(settings.maps[this.data.id]);
@@ -225,7 +226,7 @@ export class Map {
 
 			let loader = new FileLoader();
 			loader.setResponseType("json");
-			loader.load(this.data.texturesUrl,
+			loader.load(this.data.texturesUrl + "?" + generateCacheHash(),
 				resolve,
 				() => {},
 				() => reject(`Failed to load the textures.json for map: ${this.data.id}`)

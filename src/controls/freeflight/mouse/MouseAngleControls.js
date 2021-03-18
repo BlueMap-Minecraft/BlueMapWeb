@@ -46,6 +46,9 @@ export class MouseAngleControls {
         this.speedRight = speedRight;
         this.speedCapture = speedCapture;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplier = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -57,12 +60,16 @@ export class MouseAngleControls {
         this.target.addEventListener("mousedown", this.onMouseDown);
         window.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("mouseup", this.onMouseUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
         this.target.removeEventListener("mousedown", this.onMouseDown);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -103,14 +110,14 @@ export class MouseAngleControls {
      */
     onMouseMove = evt => {
         if (document.pointerLockElement) {
-            this.deltaAngle += evt.movementY * this.speedCapture;
+            this.deltaAngle += evt.movementY * this.speedCapture * this.pixelToSpeedMultiplier;
         }
 
         else if(this.moving){
             if (evt.buttons === 1) {
-                this.deltaAngle += (evt.y - this.lastY) * this.speedLeft;
+                this.deltaAngle += (evt.y - this.lastY) * this.speedLeft * this.pixelToSpeedMultiplier;
             } else {
-                this.deltaAngle += (evt.y - this.lastY) * this.speedRight;
+                this.deltaAngle += (evt.y - this.lastY) * this.speedRight * this.pixelToSpeedMultiplier;
             }
         }
 
@@ -123,6 +130,10 @@ export class MouseAngleControls {
      */
     onMouseUp = evt => {
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplier = 1 / this.target.clientHeight;
     }
 
 }

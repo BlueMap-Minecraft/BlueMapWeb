@@ -30,11 +30,13 @@ export class TouchPanControls {
     static tempVec2_1 = new Vector2();
 
     /**
+     * @param target {Element}
      * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */
-    constructor(hammer, speed, stiffness) {
+    constructor(target, hammer, speed, stiffness) {
+        this.target = target;
         this.hammer = hammer;
         this.manager = null;
 
@@ -44,6 +46,10 @@ export class TouchPanControls {
 
         this.speed = speed;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplierX = 0;
+        this.pixelToSpeedMultiplierY = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -56,6 +62,8 @@ export class TouchPanControls {
         this.hammer.on("movemove", this.onTouchMove);
         this.hammer.on("moveend", this.onTouchUp);
         this.hammer.on("movecancel", this.onTouchUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
@@ -63,6 +71,8 @@ export class TouchPanControls {
         this.hammer.off("movemove", this.onTouchMove);
         this.hammer.off("moveend", this.onTouchUp);
         this.hammer.off("movecancel", this.onTouchUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -75,8 +85,8 @@ export class TouchPanControls {
         let smoothing = this.stiffness / (16.666 / delta);
         smoothing = MathUtils.clamp(smoothing, 0, 1);
 
-        this.manager.rotation += this.deltaPosition.x * this.speed * this.stiffness;
-        this.manager.angle -= this.deltaPosition.y * this.speed * this.stiffness;
+        this.manager.rotation += this.deltaPosition.x * this.speed * this.pixelToSpeedMultiplierX * this.stiffness;
+        this.manager.angle -= this.deltaPosition.y * this.speed * this.pixelToSpeedMultiplierY * this.stiffness;
 
         this.deltaPosition.multiplyScalar(1 - smoothing);
         if (this.deltaPosition.lengthSq() < 0.0001) {
@@ -124,6 +134,11 @@ export class TouchPanControls {
         if (evt.pointerType === "mouse") return;
 
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplierX = (1 / this.target.clientWidth) * (this.target.clientWidth / this.target.clientHeight);
+        this.pixelToSpeedMultiplierY = 1 / this.target.clientHeight;
     }
 
 }

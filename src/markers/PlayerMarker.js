@@ -40,6 +40,8 @@ export class PlayerMarker extends Marker {
         this.data.playerUuid = playerUuid;
         this.data.name = playerUuid;
 
+        this.data.world = "?";
+
         this.elementObject = new CSS2DObject(htmlToElement(`
 <div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}">
     <img src="assets/playerheads/${this.data.playerUuid}.png" alt="playerhead" draggable="false">
@@ -134,6 +136,9 @@ export class PlayerMarker extends Marker {
         this.data.name = name;
         if (this.playerNameElement.innerHTML !== name)
             this.playerNameElement.innerHTML = name;
+
+        // update world
+        this.data.world = markerData.world || "?";
 
     }
 

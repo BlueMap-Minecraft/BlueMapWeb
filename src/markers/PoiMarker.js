@@ -43,11 +43,13 @@ export class PoiMarker extends HtmlMarker {
     }
 
     onClick(event) {
+        if (event.data.doubleTap) return false;
+
         if (this.highlight || !this.data.label) return true;
         this.highlight = true;
 
         let eventHandler = evt => {
-            if (evt.path.includes(this.element)) return;
+            if (evt.composedPath().includes(this.element)) return;
 
             this.highlight = false;
 

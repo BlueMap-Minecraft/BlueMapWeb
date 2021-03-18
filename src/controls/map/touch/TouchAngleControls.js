@@ -28,11 +28,13 @@ import {MathUtils} from "three";
 export class TouchAngleControls {
 
     /**
+     * @param target {Element}
      * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */
-    constructor(hammer, speed, stiffness) {
+    constructor(target, hammer, speed, stiffness) {
+        this.target = target;
         this.hammer = hammer;
         this.manager = null;
 
@@ -42,6 +44,9 @@ export class TouchAngleControls {
 
         this.speed = speed;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplierY = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -54,6 +59,8 @@ export class TouchAngleControls {
         this.hammer.on("tiltmove", this.onTouchMove);
         this.hammer.on("tiltend", this.onTouchUp);
         this.hammer.on("tiltcancel", this.onTouchUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
@@ -61,6 +68,8 @@ export class TouchAngleControls {
         this.hammer.off("tiltmove", this.onTouchMove);
         this.hammer.off("tiltend", this.onTouchUp);
         this.hammer.off("tiltcancel", this.onTouchUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -73,7 +82,7 @@ export class TouchAngleControls {
         let smoothing = this.stiffness / (16.666 / delta);
         smoothing = MathUtils.clamp(smoothing, 0, 1);
 
-        this.manager.angle += this.deltaAngle * smoothing * this.speed;
+        this.manager.angle += this.deltaAngle * smoothing * this.speed * this.pixelToSpeedMultiplierY;
 
         this.deltaAngle *= 1 - smoothing;
         if (Math.abs(this.deltaAngle) < 0.0001) {
@@ -113,6 +122,10 @@ export class TouchAngleControls {
      */
     onTouchUp = evt => {
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplierY = 1 / this.target.clientHeight;
     }
 
 }

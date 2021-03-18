@@ -24,7 +24,7 @@
  */
 import {FileLoader, Scene} from "three";
 import {MarkerSet} from "./MarkerSet";
-import {alert} from "../util/Utils";
+import {alert, generateCacheHash} from "../util/Utils";
 
 /**
  * A manager for loading and updating markers from a file
@@ -170,7 +170,7 @@ export class MarkerManager {
         return new Promise((resolve, reject) => {
             let loader = new FileLoader();
             loader.setResponseType("json");
-            loader.load(this.fileUrl,
+            loader.load(this.fileUrl + "?" + generateCacheHash(),
                 markerFileData => {
                     if (!markerFileData) reject(`Failed to parse '${this.fileUrl}'!`);
                     else resolve(markerFileData);

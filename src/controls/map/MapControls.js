@@ -27,9 +27,9 @@ import {MouseMoveControls} from "./mouse/MouseMoveControls";
 import {MouseZoomControls} from "./mouse/MouseZoomControls";
 import {MouseRotateControls} from "./mouse/MouseRotateControls";
 import {MouseAngleControls} from "./mouse/MouseAngleControls";
-import {MathUtils, Vector2} from "three";
+import {MathUtils, Vector2, Vector3} from "three";
 import {Manager, Pan, Pinch, Rotate, Tap, DIRECTION_ALL, DIRECTION_VERTICAL} from "hammerjs";
-import {animate, EasingFunctions, softClamp} from "../../util/Utils";
+import {softClamp} from "../../util/Utils";
 import {MapHeightControls} from "./MapHeightControls";
 import {KeyMoveControls} from "./keyboard/KeyMoveControls";
 import {KeyAngleControls} from "./keyboard/KeyAngleControls";
@@ -39,29 +39,34 @@ import {TouchMoveControls} from "./touch/TouchMoveControls";
 import {TouchRotateControls} from "./touch/TouchRotateControls";
 import {TouchAngleControls} from "./touch/TouchAngleControls";
 import {TouchZoomControls} from "./touch/TouchZoomControls";
+import {PlayerMarker} from "../../markers/PlayerMarker";
 
 const HALF_PI = Math.PI * 0.5;
 
 export class MapControls {
 
+    static _beforeMoveTemp = new Vector3();
+
     /**
-     * @param rootElement {EventTarget}
+     * @param rootElement {Element}
      */
     constructor(rootElement) {
         this.rootElement = rootElement;
 
+        this.data = {
+            followingPlayer: null
+        };
+
         /** @type {ControlsManager} */
         this.manager = null;
-
-        this.started = false;
 
         this.hammer = new Manager(this.rootElement);
         this.initializeHammer();
 
         //controls
-        this.mouseMove = new MouseMoveControls(this.rootElement, 0.002,0.3);
-        this.mouseRotate = new MouseRotateControls(this.rootElement, 0.004, 0.3);
-        this.mouseAngle = new MouseAngleControls(this.rootElement, 0.004, 0.3);
+        this.mouseMove = new MouseMoveControls(this.rootElement, 1.5,0.3);
+        this.mouseRotate = new MouseRotateControls(this.rootElement, 6, 0.3);
+        this.mouseAngle = new MouseAngleControls(this.rootElement, 3, 0.3);
         this.mouseZoom = new MouseZoomControls(this.rootElement, 1, 0.2);
 
         this.keyMove = new KeyMoveControls(this.rootElement, 0.025, 0.2);
@@ -69,14 +74,15 @@ export class MapControls {
         this.keyAngle = new KeyAngleControls(this.rootElement, 0.04, 0.15);
         this.keyZoom = new KeyZoomControls(this.rootElement, 0.2, 0.15);
 
-        this.touchMove = new TouchMoveControls(this.hammer, 0.002,0.3);
+        this.touchMove = new TouchMoveControls(this.rootElement, this.hammer, 1.5,0.3);
         this.touchRotate = new TouchRotateControls(this.hammer, 0.0174533, 0.3);
-        this.touchAngle = new TouchAngleControls(this.hammer, 0.01, 0.3);
+        this.touchAngle = new TouchAngleControls(this.rootElement, this.hammer, 3, 0.3);
         this.touchZoom = new TouchZoomControls(this.hammer);
 
         this.mapHeight = new MapHeightControls(0.2, 0.1);
 
-        this.animationTargetHeight = 0;
+        this.lastTap = -1;
+        this.lastTapCenter = null;
     }
 
     /**
@@ -104,27 +110,11 @@ export class MapControls {
         this.touchZoom.start(manager);
 
         this.mapHeight.start(manager);
-
-
-        let startOrtho = this.manager.ortho;
-        let startDistance = this.manager.distance;
-        let startAngle = this.manager.angle;
-        let startY = this.manager.position.y;
-
-        let targetDistance = MathUtils.clamp(this.manager.distance, 100, 10000);
-        let targetAngle = Math.min(startAngle, this.getMaxPerspectiveAngleForDistance(targetDistance));
-
-        animate(progress => {
-            let smoothProgress = EasingFunctions.easeInOutQuad(progress);
-
-            this.manager.ortho = MathUtils.lerp(startOrtho, 0, progress);
-            this.manager.distance = MathUtils.lerp(startDistance, targetDistance, smoothProgress);
-            this.manager.angle = MathUtils.lerp(startAngle, targetAngle, smoothProgress);
-            this.manager.position.y = MathUtils.lerp(startY, this.animationTargetHeight, smoothProgress);
-        }, 500, () => this.started = true);
     }
 
     stop() {
+        this.stopFollowingPlayerMarker();
+
         this.rootElement.removeEventListener("contextmenu", this.onContextMenu);
         this.hammer.off("tap", this.onTap);
 
@@ -144,8 +134,6 @@ export class MapControls {
         this.touchZoom.stop();
 
         this.mapHeight.stop();
-
-        this.started = false;
     }
 
     /**
@@ -153,18 +141,27 @@ export class MapControls {
      * @param map {Map}
      */
     update(delta, map) {
-        if (!this.started){
-            this.mapHeight.updateHeights(delta, map);
-            this.animationTargetHeight = this.mapHeight.getSuggestedHeight();
-            return;
+        this.manager.position.y = 0; // reset target y position
+
+        // move
+        MapControls._beforeMoveTemp.copy(this.manager.position);
+        this.mouseMove.update(delta, map);
+        this.keyMove.update(delta, map);
+        this.touchMove.update(delta, map);
+
+        // if moved, stop following the marker and give back control
+        if (this.data.followingPlayer && !MapControls._beforeMoveTemp.equals(this.manager.position)) {
+            this.stopFollowingPlayerMarker();
         }
 
-        // move and zoom
-        this.mouseMove.update(delta, map);
+        // follow player marker
+        if (this.data.followingPlayer) {
+            this.manager.position.copy(this.data.followingPlayer.position);
+        }
+
+        // zoom
         this.mouseZoom.update(delta, map);
-        this.keyMove.update(delta, map);
         this.keyZoom.update(delta, map);
-        this.touchMove.update(delta, map);
         this.touchZoom.update(delta, map);
 
         this.manager.distance = softClamp(this.manager.distance, 5, 10000, 0.8);
@@ -189,7 +186,6 @@ export class MapControls {
 
         // target height
         if (this.manager.ortho === 0 || this.manager.angle === 0) {
-            this.manager.position.y = 0;
             this.mapHeight.maxAngle = maxAngleForZoom;
             this.mapHeight.update(delta, map);
         }
@@ -209,38 +205,6 @@ export class MapControls {
 
     getMaxPerspectiveAngleForDistance(distance) {
         return MathUtils.clamp((1 - Math.pow(Math.max(distance - 5, 0.001) / 500, 0.5)) * HALF_PI,0, HALF_PI)
-    }
-
-    setPerspectiveView() {
-        this.reset();
-
-        let startOrtho = this.manager.ortho;
-        let startAngle = this.manager.angle;
-
-        let targetAngle = Math.min(startAngle, this.getMaxPerspectiveAngleForDistance(this.manager.distance));
-
-        animate(progress => {
-            let smoothProgress = EasingFunctions.easeInOutQuad(progress);
-
-            this.manager.ortho = MathUtils.lerp(startOrtho, 0, progress);
-            this.manager.angle = MathUtils.lerp(startAngle, targetAngle, smoothProgress);
-        }, 500);
-    }
-
-    setOrthographicView(targetRotation = 0, targetAngle = 0) {
-        this.reset();
-
-        let startOrtho = this.manager.ortho;
-        let startAngle = this.manager.angle;
-        let startRotation = this.manager.rotation;
-
-        animate(progress => {
-            let smoothProgress = EasingFunctions.easeInOutQuad(progress);
-
-            this.manager.ortho = MathUtils.lerp(startOrtho, 1, progress);
-            this.manager.angle = MathUtils.lerp(startAngle, targetAngle, smoothProgress);
-            this.manager.rotation = MathUtils.lerp(startRotation, targetRotation, smoothProgress);
-        }, 500);
     }
 
     initializeHammer() {
@@ -264,12 +228,36 @@ export class MapControls {
         this.hammer.add(touchZoom);
     }
 
+    /**
+     * @param marker {object}
+     */
+    followPlayerMarker(marker) {
+        if (marker.isPlayerMarker) marker = marker.data;
+        this.data.followingPlayer = marker;
+    }
+
+    stopFollowingPlayerMarker() {
+        this.data.followingPlayer = null;
+    }
+
     onContextMenu = evt => {
         evt.preventDefault();
     }
 
     onTap = evt => {
-        this.manager.handleMapInteraction(new Vector2(evt.center.x, evt.center.y));
+        let doubleTap = false;
+        let center = new Vector2(evt.center.x, evt.center.y);
+
+        let now = Date.now();
+        if (this.lastTap > 0 && this.lastTapCenter && now - this.lastTap < 500 && this.lastTapCenter.distanceTo(center) < 5){
+            doubleTap = true;
+            this.lastTap = -1;
+        } else {
+            this.lastTap = now;
+            this.lastTapCenter = center;
+        }
+
+        this.manager.handleMapInteraction(new Vector2(evt.center.x, evt.center.y), {doubleTap: doubleTap});
     }
 
 }

@@ -31,11 +31,13 @@ export class TouchMoveControls {
     static tempVec2_1 = new Vector2();
 
     /**
+     * @param target {Element}
      * @param hammer {Manager}
      * @param speed {number}
      * @param stiffness {number}
      */
-    constructor(hammer, speed, stiffness) {
+    constructor(target, hammer, speed, stiffness) {
+        this.target = target;
         this.hammer = hammer;
         this.manager = null;
 
@@ -45,6 +47,10 @@ export class TouchMoveControls {
 
         this.speed = speed;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplierX = 0;
+        this.pixelToSpeedMultiplierY = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -57,6 +63,8 @@ export class TouchMoveControls {
         this.hammer.on("movemove", this.onTouchMove);
         this.hammer.on("moveend", this.onTouchUp);
         this.hammer.on("movecancel", this.onTouchUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
@@ -64,6 +72,8 @@ export class TouchMoveControls {
         this.hammer.off("movemove", this.onTouchMove);
         this.hammer.off("moveend", this.onTouchUp);
         this.hammer.off("movecancel", this.onTouchUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -79,8 +89,8 @@ export class TouchMoveControls {
         let directionDelta = TouchMoveControls.tempVec2_1.copy(this.deltaPosition);
         directionDelta.rotateAround(VEC2_ZERO, this.manager.rotation);
 
-        this.manager.position.x += directionDelta.x * smoothing * this.manager.distance * this.speed;
-        this.manager.position.z += directionDelta.y * smoothing * this.manager.distance * this.speed;
+        this.manager.position.x += directionDelta.x * smoothing * this.manager.distance * this.speed * this.pixelToSpeedMultiplierX;
+        this.manager.position.z += directionDelta.y * smoothing * this.manager.distance * this.speed * this.pixelToSpeedMultiplierY;
 
         this.deltaPosition.multiplyScalar(1 - smoothing);
         if (this.deltaPosition.lengthSq() < 0.0001) {
@@ -128,6 +138,11 @@ export class TouchMoveControls {
         if (evt.pointerType === "mouse") return;
 
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplierX = (1 / this.target.clientWidth) * (this.target.clientWidth / this.target.clientHeight);
+        this.pixelToSpeedMultiplierY = 1 / this.target.clientHeight;
     }
 
 }

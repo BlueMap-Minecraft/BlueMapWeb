@@ -28,7 +28,7 @@ import {MathUtils} from "three";
 export class MouseRotateControls {
 
     /**
-     * @param target {EventTarget}
+     * @param target {Element}
      * @param speedLeft {number}
      * @param speedRight {number}
      * @param speedCapture {number}
@@ -46,6 +46,9 @@ export class MouseRotateControls {
         this.speedRight = speedRight;
         this.speedCapture = speedCapture;
         this.stiffness = stiffness;
+
+        this.pixelToSpeedMultiplier = 0;
+        this.updatePixelToSpeedMultiplier();
     }
 
     /**
@@ -57,12 +60,16 @@ export class MouseRotateControls {
         this.target.addEventListener("mousedown", this.onMouseDown);
         window.addEventListener("mousemove", this.onMouseMove);
         window.addEventListener("mouseup", this.onMouseUp);
+
+        window.addEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     stop() {
         this.target.removeEventListener("mousedown", this.onMouseDown);
         window.removeEventListener("mousemove", this.onMouseMove);
         window.removeEventListener("mouseup", this.onMouseUp);
+
+        window.removeEventListener("resize", this.updatePixelToSpeedMultiplier);
     }
 
     /**
@@ -103,14 +110,14 @@ export class MouseRotateControls {
      */
     onMouseMove = evt => {
         if (document.pointerLockElement) {
-            this.deltaRotation -= evt.movementX * this.speedCapture;
+            this.deltaRotation -= evt.movementX * this.speedCapture * this.pixelToSpeedMultiplier;
         }
 
         else if(this.moving){
             if (evt.buttons === 1) {
-                this.deltaRotation -= (evt.x - this.lastX) * this.speedLeft;
+                this.deltaRotation -= (evt.x - this.lastX) * this.speedLeft * this.pixelToSpeedMultiplier;
             } else {
-                this.deltaRotation -= (evt.x - this.lastX) * this.speedRight;
+                this.deltaRotation -= (evt.x - this.lastX) * this.speedRight * this.pixelToSpeedMultiplier;
             }
         }
 
@@ -123,6 +130,10 @@ export class MouseRotateControls {
      */
     onMouseUp = evt => {
         this.moving = false;
+    }
+
+    updatePixelToSpeedMultiplier = () => {
+        this.pixelToSpeedMultiplier = (1 / this.target.clientWidth) * (this.target.clientWidth / this.target.clientHeight);
     }
 
 }

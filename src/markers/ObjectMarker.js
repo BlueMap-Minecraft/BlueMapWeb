@@ -41,6 +41,8 @@ export class ObjectMarker extends Marker {
         this.data.detail = null;
         this.data.link = null;
         this.data.newTab = true;
+
+        this.lastClick = -1;
     }
 
     onClick(event) {
@@ -49,6 +51,8 @@ export class ObjectMarker extends Marker {
             pos.copy(event.intersection.pointOnLine || event.intersection.point);
             pos.sub(this.position);
         }
+
+        if (event.data.doubleTap) return false;
 
         if (this.data.detail || this.data.label) {
             let popup = new LabelPopup(this.data.detail || this.data.label);
