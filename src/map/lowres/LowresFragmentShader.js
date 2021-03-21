@@ -27,6 +27,10 @@ import { ShaderChunk } from 'three';
 export const LOWRES_FRAGMENT_SHADER = `
 ${ShaderChunk.logdepthbuf_pars_fragment}
 
+#ifndef texture
+	#define texture texture2D
+#endif
+
 struct TileMap {
 	sampler2D map;
 	float size;

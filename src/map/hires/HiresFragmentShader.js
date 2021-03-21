@@ -27,6 +27,10 @@ import { ShaderChunk } from 'three';
 export const HIRES_FRAGMENT_SHADER = `
 ${ShaderChunk.logdepthbuf_pars_fragment}
 
+#ifndef texture
+	#define texture texture2D
+#endif
+
 uniform sampler2D textureImage;
 uniform float sunlightStrength;
 uniform float ambientLight;
