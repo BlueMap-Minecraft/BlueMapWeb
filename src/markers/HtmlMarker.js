@@ -36,6 +36,8 @@ export class HtmlMarker extends Marker {
         Object.defineProperty(this, 'isHtmlMarker', {value: true});
         this.data.type = "html";
 
+        this.data.label = null;
+
         this.elementObject = new CSS2DObject(htmlToElement(`<div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}"></div>`));
         this.elementObject.onBeforeRender = (renderer, scene, camera) => this.onBeforeRender(renderer, scene, camera);
 
@@ -88,6 +90,7 @@ export class HtmlMarker extends Marker {
     /**
      * @param markerData {{
      *      position: {x: number, y: number, z: number},
+     *      label: string,
      *      anchor: {x: number, y: number},
      *      html: string,
      *      minDistance: number,
@@ -101,6 +104,9 @@ export class HtmlMarker extends Marker {
         this.position.setX(pos.x || 0);
         this.position.setY(pos.y || 0);
         this.position.setZ(pos.z || 0);
+
+        // update label
+        this.data.label = markerData.label || null;
 
         // update anchor
         let anch = markerData.anchor || {};
