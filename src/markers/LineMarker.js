@@ -83,6 +83,7 @@ export class LineMarker extends ObjectMarker {
      * @param markerData {{
      *      position: {x: number, y: number, z: number},
      *      label: string,
+     *      detail: string,
      *      line: {x: number, y: number, z: number}[],
      *      link: string,
      *      newTab: boolean,

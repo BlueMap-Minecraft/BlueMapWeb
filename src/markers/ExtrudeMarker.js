@@ -81,6 +81,7 @@ export class ExtrudeMarker extends ObjectMarker {
      * @param markerData {{
      *      position: {x: number, y: number, z: number},
      *      label: string,
+     *      detail: string,
      *      shape: {x: number, z: number}[],
      *      shapeMinY: number,
      *      shapeMaxY: number,

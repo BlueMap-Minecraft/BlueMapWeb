@@ -77,6 +77,7 @@ export class ShapeMarker extends ObjectMarker {
      * @param markerData {{
      *      position: {x: number, y: number, z: number},
      *      label: string,
+     *      detail: string,
      *      shape: {x: number, z: number}[],
      *      shapeY: number,
      *      height: number,

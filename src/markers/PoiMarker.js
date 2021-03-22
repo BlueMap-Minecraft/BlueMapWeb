@@ -88,8 +88,6 @@ export class PoiMarker extends HtmlMarker {
      *      iconAnchor: {x: number, y: number},
      *      label: string,
      *      icon: string,
-     *      link: string,
-     *      newTab: boolean,
      *      minDistance: number,
      *      maxDistance: number
      * }}
