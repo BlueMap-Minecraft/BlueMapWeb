@@ -195,6 +195,7 @@ export class TileManager {
             .catch(error => {
                 if (error.status && error.status === "empty") return;
                 if (error.target && error.target.status === 404) return;
+                if (error.type && error.type === "abort") return;
 
                 alert(this.events, "Failed to load tile: " + error, "warning");
             })

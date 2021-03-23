@@ -267,7 +267,7 @@ export class Map {
 			texture.wrapT = ClampToEdgeWrapping;
 			texture.flipY = false;
 			texture.flatShading = true;
-			texture.needsUpdate = true;
+			texture.image.addEventListener("load", () => texture.needsUpdate = true);
 
 			this.loadedTextures.push(texture);
 
