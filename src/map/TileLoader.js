@@ -61,7 +61,10 @@ export class TileLoader {
         return new Promise((resolve, reject) => {
             this.fileLoader.load(tileUrl + '?' + this.tileCacheHash,
                 geometryJson => {
-                    if (!geometryJson.type || geometryJson.type !== 'BufferGeometry') reject({status: "empty"});
+                    if (!geometryJson.type || geometryJson.type !== 'BufferGeometry'){
+                        reject({status: "empty"});
+                        return;
+                    }
 
                     let geometry = this.bufferGeometryLoader.parse(geometryJson);
 

@@ -63,8 +63,12 @@ export class MarkerManager {
         if (ms > 0) {
             let autoUpdate = () => {
                 this.update()
-                    .then(() => {
-                        this._updateInterval = setTimeout(autoUpdate, ms);
+                    .then(success => {
+                        if (success) {
+                            this._updateInterval = setTimeout(autoUpdate, ms);
+                        } else {
+                            this._updateInterval = setTimeout(autoUpdate, Math.max(ms, 1000 * 15));
+                        }
                     })
                     .catch(e => {
                         alert(this.events, e, "warning");
@@ -158,8 +162,11 @@ export class MarkerManager {
     /**
      * Updates all managed markers using the provided data.
      * @param markerData {object} - The data object, usually parsed json from a markers.json
+     * @returns {boolean} - If the update was successful
      */
-    updateFromData(markerData) {}
+    updateFromData(markerData) {
+        return false;
+    }
 
     /**
      * @private

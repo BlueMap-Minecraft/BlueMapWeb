@@ -52,7 +52,7 @@ export class MarkerFileManager extends MarkerManager {
     }
 
     updateFromData(markerData) {
-        if (!Array.isArray(markerData.markerSets)) return;
+        if (!Array.isArray(markerData.markerSets)) return false;
         let updatedMarkerSets = new Set();
 
         // add & update
@@ -71,6 +71,8 @@ export class MarkerFileManager extends MarkerManager {
                 this.removeMarkerSet(setId);
             }
         });
+
+        return true;
     }
 
     /**

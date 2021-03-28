@@ -50,20 +50,23 @@ export class PlayerMarkerManager extends MarkerManager {
      */
     updateFromData(markerData) {
 
+        if (!Array.isArray(markerData.players)) {
+            this.clear();
+            return false;
+        }
+
         /** @type Set<Marker> */
         let updatedPlayerMarkers = new Set();
 
         // update
-        if (Array.isArray(markerData.players)) {
-            markerData.players.forEach(playerData => {
-                try {
-                    let playerMarker = this.updatePlayerMarkerFromData(playerData);
-                    updatedPlayerMarkers.add(playerMarker);
-                } catch (err) {
-                    alert(this.events, err, "fine");
-                }
-            });
-        }
+        markerData.players.forEach(playerData => {
+            try {
+                let playerMarker = this.updatePlayerMarkerFromData(playerData);
+                updatedPlayerMarkers.add(playerMarker);
+            } catch (err) {
+                alert(this.events, err, "fine");
+            }
+        });
 
         // remove
         this.markers.forEach((playerMarker, markerId) => {
@@ -72,6 +75,7 @@ export class PlayerMarkerManager extends MarkerManager {
             }
         });
 
+        return true;
     }
 
     /**
