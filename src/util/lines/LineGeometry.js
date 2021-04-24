@@ -87,8 +87,6 @@ LineGeometry.prototype = Object.assign( Object.create( LineSegmentsGeometry.prot
 
 	copy: function ( /* source */ ) {
 
-		// todo
-
 		return this;
 
 	}

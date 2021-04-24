@@ -243,8 +243,6 @@ LineSegmentsGeometry.prototype = Object.assign( Object.create( InstancedBufferGe
 
 	toJSON: function () {
 
-		// todo
-
 	},
 
 	applyMatrix: function ( matrix ) {

@@ -23,7 +23,7 @@ UniformsLib.line = {
 	resolution: { value: new Vector2( 1, 1 ) },
 	dashScale: { value: 1 },
 	dashSize: { value: 1 },
-	gapSize: { value: 1 }, // todo FIX - maybe change to totalSize
+	gapSize: { value: 1 },
 	opacity: { value: 1 }
 
 };
