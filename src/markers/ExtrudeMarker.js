@@ -415,6 +415,7 @@ class ExtrudeMarkerBorder extends Line2 {
      * @param shape {Shape}
      */
     updateGeometry(shape) {
+        this.geometry = new LineSegmentsGeometry();
         this.geometry.setPositions(ExtrudeMarkerBorder.createLinePoints(shape));
         this.computeLineDistances();
     }

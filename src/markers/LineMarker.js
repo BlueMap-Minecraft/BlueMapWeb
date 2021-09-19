@@ -276,6 +276,7 @@ class LineMarkerLine extends Line2 {
      * @param points {number[]}
      */
     updateGeometry(points) {
+        this.geometry = new LineGeometry();
         this.geometry.setPositions(points);
         this.computeLineDistances();
     }

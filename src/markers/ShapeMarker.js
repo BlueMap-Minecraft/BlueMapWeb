@@ -408,6 +408,7 @@ class ShapeMarkerBorder extends Line2 {
      * @param shape {Shape}
      */
     updateGeometry(shape) {
+        this.geometry = new LineGeometry();
         this.geometry.setPositions(ShapeMarkerBorder.createLinePoints(shape));
         this.computeLineDistances();
     }
