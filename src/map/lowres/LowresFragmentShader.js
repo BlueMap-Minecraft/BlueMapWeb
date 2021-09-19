@@ -56,7 +56,7 @@ void main() {
 	
 	vec4 color = vec4(vColor, 1.0);
 
-	float diff = sqrt(max(dot(vNormal, vec3(0.3637, 0.7274, 0.5819)), 0.0)) * 0.4 + 0.6;
+	float diff = max(dot(vNormal, vec3(0.3637, 0.7274, 0.5819)), 0.0) * 0.3 + 0.7;
 	color *= diff;
 
 	color *= mix(sunlightStrength, 1.0, ambientLight);
