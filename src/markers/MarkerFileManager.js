@@ -120,8 +120,8 @@ export class MarkerFileManager extends MarkerManager {
 
         // remove not updated Markers
         markerSet.children.forEach((marker) => {
-            if (marker.isMarker && !updatedMarkers.has(marker) && !this.markers.has(marker.markerId)) {
-                this.removeMarker(marker.markerId);
+            if (marker.isMarker && !updatedMarkers.has(marker)) {
+                this.removeMarker(marker.data.id);
             }
         });
 
