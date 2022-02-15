@@ -87,6 +87,9 @@ export class PoiMarker extends HtmlMarker {
      *      anchor: {x: number, y: number},
      *      iconAnchor: {x: number, y: number},
      *      label: string,
+     *      image: string,
+     *      width: number,
+     *      height: number,
      *      icon: string,
      *      minDistance: number,
      *      maxDistance: number
@@ -110,7 +113,7 @@ export class PoiMarker extends HtmlMarker {
         // update label
         if (this.data.label !== markerData.label){
             this.data.label = markerData.label || "";
-            this.labelElement.innerHTML = this.data.label || "";
+            this.labelElement.innerHTML = markerData.image ? `<div><img src="${markerData.image}" width="${this.data.width || 200}" height="${this.data.height || 150}"/>${this.data.label}</div>` : this.data.label
         }
 
         // update icon
@@ -124,5 +127,4 @@ export class PoiMarker extends HtmlMarker {
         this.fadeDistanceMax = markerData.maxDistance !== undefined ? markerData.maxDistance : Number.MAX_VALUE;
 
     }
-
 }
