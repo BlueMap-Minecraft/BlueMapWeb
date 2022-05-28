@@ -239,14 +239,19 @@ export class Map {
 	 * @param vertexShader {string}
 	 * @param fragmentShader {string}
 	 * @param uniforms {object}
-	 * @param textures {object} the textures-data
+	 * @param textures {{
+	 *     resourcePath: string,
+	 *     color: number[],
+	 *     halfTransparent: boolean,
+	 *     texture: string
+	 * }[]} the textures-data
 	 * @returns {ShaderMaterial[]} the hires Material (array because its a multi-material)
 	 */
 	createHiresMaterial(vertexShader, fragmentShader, uniforms, textures) {
 		let materials = [];
-		if (!Array.isArray(textures.textures)) throw new Error("Invalid texture.json: 'textures' is not an array!")
-		for (let i = 0; i < textures.textures.length; i++) {
-			let textureSettings = textures.textures[i];
+		if (!Array.isArray(textures)) throw new Error("Invalid texture.json: 'textures' is not an array!")
+		for (let i = 0; i < textures.length; i++) {
+			let textureSettings = textures[i];
 
 			let color = textureSettings.color;
 			if (!Array.isArray(color) || color.length < 4){
@@ -254,7 +259,7 @@ export class Map {
 			}
 
 			let opaque = color[3] === 1;
-			let transparent = !!textureSettings.transparent;
+			let transparent = !!textureSettings.halfTransparent;
 
 			let texture = new Texture();
 			texture.image = stringToImage(textureSettings.texture);
