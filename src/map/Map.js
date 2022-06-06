@@ -23,37 +23,42 @@
  * THE SOFTWARE.
  */
 import {
-	ClampToEdgeWrapping, Color,
-	FileLoader, FrontSide, NearestFilter, NearestMipMapLinearFilter, Raycaster,
-	Scene, ShaderMaterial, Texture, Vector2, Vector3, VertexColors
+	ClampToEdgeWrapping,
+	Color,
+	FileLoader,
+	FrontSide,
+	NearestFilter,
+	NearestMipMapLinearFilter,
+	Raycaster,
+	Scene,
+	ShaderMaterial,
+	Texture,
+	Vector3,
+	VertexColors
 } from "three";
-import {alert, dispatchEvent, generateCacheHash, hashTile, stringToImage} from "../util/Utils";
+import {alert, dispatchEvent, generateCacheHash, hashTile, stringToImage, vecArrToObj} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
-import {MarkerFileManager} from "../markers/MarkerFileManager";
-import {PlayerMarkerManager} from "../markers/PlayerMarkerManager";
 
 export class Map {
 
 	/**
 	 * @param id {string}
 	 * @param dataUrl {string}
-	 * @param settingsUrl {string}
-	 * @param texturesUrl {string}
 	 * @param events {EventTarget}
 	 */
-	constructor(id, dataUrl, settingsUrl, texturesUrl, events = null) {
+	constructor(id, dataUrl, events = null) {
 		Object.defineProperty( this, 'isMap', { value: true } );
 
 		this.events = events;
 
 		this.data = {
 			id: id,
+			sorting: 0,
 			dataUrl: dataUrl,
-			settingsUrl: settingsUrl,
-			texturesUrl: texturesUrl,
+			settingsUrl: dataUrl + "settings.json",
+			texturesUrl: dataUrl + "textures.json",
 			name: id,
-			world: "-",
 			startPos: {x: 0, z: 0},
 			skyColor: new Color(),
 			ambientLight: 0,
@@ -127,28 +132,33 @@ export class Map {
 		return this.loadSettingsFile()
 			.then(worldSettings => {
 				this.data.name = worldSettings.name ? worldSettings.name : this.data.name;
-				this.data.world = worldSettings.world ? worldSettings.world : this.data.world;
 
-				this.data.startPos = {...this.data.startPos, ...worldSettings.startPos};
-				this.data.skyColor.setRGB(
-					worldSettings.skyColor.r !== undefined ? worldSettings.skyColor.r : this.data.skyColor.r,
-					worldSettings.skyColor.g !== undefined ? worldSettings.skyColor.g : this.data.skyColor.g,
-					worldSettings.skyColor.b !== undefined ? worldSettings.skyColor.b : this.data.skyColor.b
-				);
+				this.data.sorting = worldSettings.sorting ? worldSettings.sorting : this.data.sorting;
+
+				this.data.startPos = {...this.data.startPos, ...vecArrToObj(worldSettings.startPos, true)};
+
+				if (worldSettings.skyColor && worldSettings.skyColor.length >= 3) {
+					this.data.skyColor.setRGB(
+						worldSettings.skyColor[0],
+						worldSettings.skyColor[1],
+						worldSettings.skyColor[2]
+					);
+				}
+
 				this.data.ambientLight = worldSettings.ambientLight ? worldSettings.ambientLight : this.data.ambientLight;
 
 				if (worldSettings.hires === undefined) worldSettings.hires = {};
 				if (worldSettings.lowres === undefined) worldSettings.lowres = {};
 
 				this.data.hires = {
-					tileSize: {...this.data.hires.tileSize, ...worldSettings.hires.tileSize},
-					scale: {...this.data.hires.scale, ...worldSettings.hires.scale},
-					translate: {...this.data.hires.translate, ...worldSettings.hires.translate}
+					tileSize: {...this.data.hires.tileSize, ...vecArrToObj(worldSettings.hires.tileSize, true)},
+					scale: {...this.data.hires.scale, ...vecArrToObj(worldSettings.hires.scale, true)},
+					translate: {...this.data.hires.translate, ...vecArrToObj(worldSettings.hires.translate, true)}
 				};
 				this.data.lowres = {
-					tileSize: {...this.data.lowres.tileSize, ...worldSettings.lowres.tileSize},
-					scale: {...this.data.lowres.scale, ...worldSettings.lowres.scale},
-					translate: {...this.data.lowres.translate, ...worldSettings.lowres.translate}
+					tileSize: {...this.data.lowres.tileSize, ...vecArrToObj(worldSettings.lowres.tileSize, true)},
+					scale: {...this.data.lowres.scale, ...vecArrToObj(worldSettings.lowres.scale, true)},
+					translate: {...this.data.lowres.translate, ...vecArrToObj(worldSettings.lowres.translate, true)}
 				};
 
 				alert(this.events, `Settings for map '${this.data.id}' loaded.`, "fine");
@@ -203,13 +213,7 @@ export class Map {
             let loader = new FileLoader();
             loader.setResponseType("json");
             loader.load(this.data.settingsUrl + "?" + generateCacheHash(),
-                settings => {
-                    if (settings.maps && settings.maps[this.data.id]) {
-                        resolve(settings.maps[this.data.id]);
-                    } else {
-                        reject(`the settings.json does not contain information for map: ${this.data.id}`);
-                    }
-                },
+                resolve,
                 () => {},
                 () => reject(`Failed to load the settings.json for map: ${this.data.id}`)
             )
