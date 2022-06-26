@@ -33,14 +33,11 @@ export class PlayerMarkerManager extends MarkerManager {
      * @constructor
      * @param markerScene {THREE.Scene} - The scene to which all markers will be added
      * @param playerDataUrl {string} - The marker file from which this manager updates its markers
-     * @param worldId {string} - The worldId of the world for which the markers should be loaded
      * @param events {EventTarget}
      */
-    constructor(markerScene, playerDataUrl, worldId, events = null) {
+    constructor(markerScene, playerDataUrl, events = null) {
         super(markerScene, playerDataUrl, events);
         Object.defineProperty(this, 'isPlayerMarkerManager', {value: true});
-
-        this.worldId = worldId;
 
         this.getPlayerMarkerSet();
     }
@@ -105,8 +102,8 @@ export class PlayerMarkerManager extends MarkerManager {
         // update
         marker.updateFromData(markerData);
 
-        // hide if wrong world
-        marker.visible = markerData.world === this.worldId;
+        // hide if from different world
+        marker.visible = !markerData.foreign;
 
         return marker;
     }
@@ -125,6 +122,14 @@ export class PlayerMarkerManager extends MarkerManager {
         }
 
         return playerMarkerSet;
+    }
+
+    /**
+     * @param playerUuid {string}
+     * @returns {Marker}
+     */
+    getPlayerMarker(playerUuid) {
+        return this.markers.get("bm-player-" + playerUuid);
     }
 
 }
