@@ -22,32 +22,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import {MarkerManager} from "./MarkerManager";
-import {alert} from "../util/Utils";
+
 import {MarkerSet} from "./MarkerSet";
+import {alert} from "../util/Utils";
 import {PlayerMarker} from "./PlayerMarker";
 
-export class PlayerMarkerManager extends MarkerManager {
+export class PlayerMarkerSet extends MarkerSet {
 
-    /**
-     * @constructor
-     * @param markerScene {THREE.Scene} - The scene to which all markers will be added
-     * @param playerDataUrl {string} - The marker file from which this manager updates its markers
-     * @param events {EventTarget}
-     */
-    constructor(markerScene, playerDataUrl, events = null) {
-        super(markerScene, playerDataUrl, events);
-        Object.defineProperty(this, 'isPlayerMarkerManager', {value: true});
-
-        this.getPlayerMarkerSet();
+    constructor(id) {
+        super(id);
+        this.data.label = "Player";
+        this.data.toggleable = true;
+        this.data.defaultHide = false;
     }
 
-    /**
-     * @param markerData {{players: PlayerLike[]}}
-     */
-    updateFromData(markerData) {
-
-        if (!Array.isArray(markerData.players)) {
+    updateFromPlayerData(data) {
+        if (!Array.isArray(data.players)) {
             this.clear();
             return false;
         }
@@ -56,7 +46,7 @@ export class PlayerMarkerManager extends MarkerManager {
         let updatedPlayerMarkers = new Set();
 
         // update
-        markerData.players.forEach(playerData => {
+        data.players.forEach(playerData => {
             try {
                 let playerMarker = this.updatePlayerMarkerFromData(playerData);
                 updatedPlayerMarkers.add(playerMarker);
@@ -66,38 +56,29 @@ export class PlayerMarkerManager extends MarkerManager {
         });
 
         // remove
-        this.markers.forEach((playerMarker, markerId) => {
+        this.markers.forEach(playerMarker => {
             if (!updatedPlayerMarkers.has(playerMarker)) {
-                this.removeMarker(markerId);
+                this.remove(playerMarker);
             }
         });
 
         return true;
     }
 
-    /**
-     * @private
-     * @param markerData {PlayerLike}
-     * @returns PlayerMarker
-     */
     updatePlayerMarkerFromData(markerData) {
         let playerUuid = markerData.uuid;
         if (!playerUuid) throw new Error("player-data has no uuid!");
-        let markerId = "bm-player-" + playerUuid;
+        let markerId = this.getPlayerMarkerId(playerUuid);
 
         /** @type PlayerMarker */
         let marker = this.markers.get(markerId);
 
-        let markerSet = this.getPlayerMarkerSet();
-
         // create new if not existent of wrong type
         if (!marker || !marker.isPlayerMarker) {
+            if (marker) this.remove(marker);
             marker = new PlayerMarker(markerId, playerUuid);
-            this.addMarker(markerSet, marker);
+            this.add(marker);
         }
-
-        // make sure marker is in the correct MarkerSet
-        if (marker.parent !== markerSet) markerSet.add(marker);
 
         // update
         marker.updateFromData(markerData);
@@ -108,28 +89,12 @@ export class PlayerMarkerManager extends MarkerManager {
         return marker;
     }
 
-    /**
-     * @private
-     * @returns {MarkerSet}
-     */
-    getPlayerMarkerSet() {
-        let playerMarkerSet = this.markerSets.get("bm-players");
-
-        if (!playerMarkerSet) {
-            playerMarkerSet = new MarkerSet("bm-players");
-            playerMarkerSet.data.label = "Players";
-            this.addMarkerSet(playerMarkerSet);
-        }
-
-        return playerMarkerSet;
+    getPlayerMarker(playerUuid) {
+        return this.markers.get(this.getPlayerMarkerId(playerUuid));
     }
 
-    /**
-     * @param playerUuid {string}
-     * @returns {Marker}
-     */
-    getPlayerMarker(playerUuid) {
-        return this.markers.get("bm-player-" + playerUuid);
+    getPlayerMarkerId(playerUuid) {
+        return "bm-player-" + playerUuid;
     }
 
 }

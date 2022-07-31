@@ -25,6 +25,14 @@
 import {FileLoader, Scene} from "three";
 import {MarkerSet} from "./MarkerSet";
 import {alert, generateCacheHash} from "../util/Utils";
+import {PlayerMarkerSet} from "./PlayerMarkerSet";
+
+export const MarkerFileType = {
+    NORMAL: 1,
+    PLAYER: 2,
+}
+
+export const PLAYER_MARKER_SET_ID = "bm-players";
 
 /**
  * A manager for loading and updating markers from a file
@@ -33,21 +41,18 @@ export class MarkerManager {
 
     /**
      * @constructor
-     * @param markerScene {Scene} - The scene to which all markers will be added
+     * @param root {MarkerSet} - The scene to which all markers will be added
      * @param fileUrl {string} - The marker file from which this manager updates its markers
+     * @param fileType {number} - The type of the marker-file, see MarkerManager.NORMAL and MarkerManager.PLAYER
      * @param events {EventTarget}
      */
-    constructor(markerScene, fileUrl, events = null) {
+    constructor(root, fileUrl, fileType, events = null) {
         Object.defineProperty(this, 'isMarkerManager', {value: true});
 
-        this.markerScene = markerScene;
+        this.root = root;
         this.fileUrl = fileUrl;
+        this.fileType = fileType;
         this.events = events;
-
-        /** @type {Map<string, MarkerSet>} */
-        this.markerSets = new Map();
-        /** @type {Map<string, Marker>} */
-        this.markers = new Map();
 
         /** @type {NodeJS.Timeout} */
         this._updateInterval = null;
@@ -90,82 +95,73 @@ export class MarkerManager {
     }
 
     /**
+     * @private
+     * @param markerData
+     */
+    updateFromData(markerData) {
+        switch (this.fileType) {
+            case MarkerFileType.NORMAL: return this.updateFromDataNormal(markerData);
+            case MarkerFileType.PLAYER: return this.updateFromDataPlayer(markerData);
+        }
+    }
+
+    /**
+     * @private
+     * @param markerData
+     * @returns {boolean}
+     */
+    updateFromDataNormal(markerData) {
+        this.root.updateMarkerSetsFromData(markerData, [PLAYER_MARKER_SET_ID, "bm-popup-set"]);
+        return true;
+    }
+
+    /**
+     * @private
+     * @param markerFileData
+     * @returns {boolean}
+     */
+    updateFromDataPlayer(markerFileData) {
+        let playerMarkerSet = this.getPlayerMarkerSet();
+        return playerMarkerSet.updateFromPlayerData(markerFileData);
+    }
+
+    /**
+     * @private
+     * @returns {PlayerMarkerSet}
+     */
+    getPlayerMarkerSet() {
+        /** @type {PlayerMarkerSet} */
+        let playerMarkerSet = /** @type {PlayerMarkerSet} */ this.root.markerSets.get(PLAYER_MARKER_SET_ID);
+
+        if (!playerMarkerSet) {
+            playerMarkerSet = new PlayerMarkerSet(PLAYER_MARKER_SET_ID);
+            this.root.add(playerMarkerSet);
+        }
+
+        return playerMarkerSet;
+    }
+
+    /**
+     * @param playerUuid {string}
+     * @returns {PlayerMarker | undefined}
+     */
+    getPlayerMarker(playerUuid) {
+        return this.getPlayerMarkerSet().getPlayerMarker(playerUuid)
+    }
+
+    /**
      * Stops automatic-updates and disposes all markersets and markers managed by this manager
      */
     dispose() {
         this.setAutoUpdateInterval(0);
-        this.markerSets.forEach(markerSet => markerSet.dispose());
+        this.clear();
     }
 
     /**
      * Removes all markers managed by this marker-manager
      */
     clear() {
-        this.markerSets.forEach(markerSet => this.removeMarkerSet(markerSet.data.id));
-    }
-
-    /**
-     * @protected
-     * Adds a MarkerSet to this Manager, removing any existing markerSet with this id first.
-     * @param markerSet {MarkerSet}
-     */
-    addMarkerSet(markerSet) {
-        this.removeMarkerSet(markerSet.data.id);
-
-        this.markerSets.set(markerSet.data.id, markerSet);
-        this.markerScene.add(markerSet);
-    }
-
-    /**
-     * @protected
-     * Removes a MarkerSet from this Manager
-     * @param setId {string} - The id of the MarkerSet
-     */
-    removeMarkerSet(setId) {
-        let markerSet = this.markerSets.get(setId);
-
-        if (markerSet) {
-            this.markerScene.remove(markerSet);
-            this.markerSets.delete(setId);
-            markerSet.dispose();
-        }
-    }
-
-    /**
-     * @protected
-     * Adds a marker to this manager
-     * @param markerSet {MarkerSet}
-     * @param marker {Marker}
-     */
-    addMarker(markerSet, marker) {
-        this.removeMarker(marker.data.id);
-
-        this.markers.set(marker.data.id, marker);
-        markerSet.add(marker);
-    }
-
-    /**
-     * @protected
-     * Removes a marker from this manager
-     * @param markerId {string}
-     */
-    removeMarker(markerId) {
-        let marker = this.markers.get(markerId);
-
-        if (marker) {
-            if (marker.parent) marker.parent.remove(marker);
-            this.markers.delete(markerId);
-            marker.dispose();
-        }
-    }
-
-    /**
-     * Updates all managed markers using the provided data.
-     * @param markerData {object} - The data object, usually parsed json from a markers.json
-     * @returns {boolean} - If the update was successful
-     */
-    updateFromData(markerData) {
-        return false;
+        this.root.clear();
     }
 
     /**

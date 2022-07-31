@@ -36,12 +36,11 @@ export * from "./markers/ExtrudeMarker";
 export * from "./markers/HtmlMarker";
 export * from "./markers/LineMarker";
 export * from "./markers/Marker";
-export * from "./markers/MarkerFileManager";
 export * from "./markers/MarkerManager";
 export * from "./markers/MarkerSet";
+export * from "./markers/PlayerMarkerSet";
 export * from "./markers/ObjectMarker";
 export * from "./markers/PlayerMarker";
-export * from "./markers/PlayerMarkerManager";
 export * from "./markers/PoiMarker";
 export * from "./markers/ShapeMarker";
 
