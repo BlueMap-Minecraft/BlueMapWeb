@@ -34,7 +34,7 @@ export class TileManager {
 
     /**
      * @param scene {THREE.Scene}
-     * @param tileLoader {TileLoader}
+     * @param tileLoader {TileLoader | LowresTileLoader}
      * @param onTileLoad {function(Tile)}
      * @param onTileUnload {function(Tile)}
      * @param events {EventTarget}
@@ -197,7 +197,7 @@ export class TileManager {
                 if (error.target && error.target.status === 404) return;
                 if (error.type && error.type === "abort") return;
 
-                alert(this.events, "Failed to load tile: " + error, "warning");
+                //alert(this.events, "Failed to load tile: " + error.type, "warning");
             })
             .finally(() => {
                 this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);

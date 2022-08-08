@@ -39,6 +39,7 @@ import {
 import {alert, dispatchEvent, generateCacheHash, hashTile, stringToImage, vecArrToObj} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
+import {LowresTileLoader} from "./LowresTileLoader";
 
 export class Map {
 
@@ -114,8 +115,8 @@ export class Map {
 
                 this.hiresMaterial = this.createHiresMaterial(hiresVertexShader, hiresFragmentShader, uniforms, textures);
 
-                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}hires/`, this.hiresMaterial, this.data.hires, tileCacheHash), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
-                this.lowresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}lowres/`, this.lowresMaterial, this.data.lowres, tileCacheHash), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+                this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}tiles/0/`, this.hiresMaterial, this.data.hires, tileCacheHash), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
+                this.lowresTileManager = new TileManager(new Scene(), new LowresTileLoader(`${this.data.dataUrl}tiles/1/`, lowresVertexShader, lowresFragmentShader, tileCacheHash), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
 
                 this.hiresTileManager.scene.autoUpdate = false;
                 this.lowresTileManager.scene.autoUpdate = false;

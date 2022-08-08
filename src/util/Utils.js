@@ -374,7 +374,7 @@ export const softClamp = (value, min, max, stiffness) => {
 }
 
 export const vecArrToObj = (val, useZ = false) => {
-    if (val.length >= 2) {
+    if (val && val.length >= 2) {
         if (useZ) return {x: val[0], z: val[1]};
         return {x: val[0], y: val[1]};
     }

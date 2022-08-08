@@ -28,6 +28,8 @@ export const LOWRES_VERTEX_SHADER = `
 #include <common>
 ${ShaderChunk.logdepthbuf_pars_vertex}
 
+uniform sampler2D textureImage;
+
 varying vec3 vPosition;
 varying vec3 vWorldPosition;
 varying vec3 vNormal;
@@ -36,14 +38,18 @@ varying vec3 vColor;
 varying float vDistance;
 
 void main() {
-	vec4 worldPos = modelMatrix * vec4(position, 1);
+	vPosition = position;
+	
+	vec4 color = texture(textureImage, vec2(position.x / 500.0, (position.z + 500.0) / 1000.0));
+	vPosition.y += color.b * 255.0;
+	
+	vec4 worldPos = modelMatrix * vec4(vPosition, 1);
 	vec4 viewPos = viewMatrix * worldPos;
 	
-	vPosition = position;
 	vWorldPosition = worldPos.xyz;
-	vNormal = normal;
-	vUv = uv;
-	vColor = color;
+	//vNormal = normal;
+	//vUv = uv;
+	//vColor = color;
 	vDistance = -viewPos.z;
 	
 	gl_Position = projectionMatrix * viewPos;

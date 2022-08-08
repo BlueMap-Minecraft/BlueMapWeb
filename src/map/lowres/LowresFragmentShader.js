@@ -39,9 +39,10 @@ struct TileMap {
 	vec2 pos; 
 };
 
-uniform float sunlightStrength;
-uniform float ambientLight;
-uniform TileMap hiresTileMap;
+//uniform float sunlightStrength;
+//uniform float ambientLight;
+//uniform TileMap hiresTileMap;
+uniform sampler2D textureImage;
 
 varying vec3 vPosition;
 varying vec3 vWorldPosition;
@@ -52,15 +53,25 @@ varying float vDistance;
 
 void main() {
 	//discard if hires tile is loaded at that position
-	if (vDistance < 1900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r >= 1.0) discard;
+	//if (vDistance < 1900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r >= 1.0) discard;
 	
-	vec4 color = vec4(vColor, 1.0);
+	//vec4 color = vec4(vColor, 1.0);
 
-	float diff = max(dot(vNormal, vec3(0.3637, 0.7274, 0.5819)), 0.0) * 0.3 + 0.7;
-	color *= diff;
+	//float diff = max(dot(vNormal, vec3(0.3637, 0.7274, 0.5819)), 0.0) * 0.3 + 0.7;
+	//color *= diff;
 
-	color *= mix(sunlightStrength, 1.0, ambientLight);
+	//color *= mix(sunlightStrength, 1.0, ambientLight);
 
+	//vec4 color = vec4(0.3637, 0.7274, 0.5819, 1.0);
+	vec4 color = texture(textureImage, vec2(vPosition.x / 500.0, vPosition.z / 1000.0));
+	
+	float height = texture(textureImage, vec2(vPosition.x / 500.0, (vPosition.z + 500.0) / 1000.0)).b * 255.0;
+	float heightX = texture(textureImage, vec2((vPosition.x + 1.0) / 500.0, (vPosition.z + 500.0) / 1000.0)).b * 255.0;
+	float heightZ = texture(textureImage, vec2(vPosition.x / 500.0, (vPosition.z + 501.0) / 1000.0)).b * 255.0;
+	float diff = (height - heightX) + (height - heightZ);
+	
+	color.rgb += clamp(diff * 0.04, -0.2, 0.04);
+	
 	gl_FragColor = color;
 	
 	${ShaderChunk.logdepthbuf_fragment}

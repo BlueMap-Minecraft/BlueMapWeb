@@ -291,7 +291,7 @@ export class MapViewer {
 			this.renderer.render(this.map.lowresTileManager.scene, this.camera);
 			this.renderer.clearDepth();
 
-			if (this.controlsManager.distance < 2000) {
+			if (this.controlsManager.distance < 1000) {
 				this.renderer.render(this.map.hiresTileManager.scene, this.camera);
 			}
 		}
