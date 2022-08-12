@@ -36,7 +36,7 @@ import {
 	Vector3,
 	VertexColors
 } from "three";
-import {alert, dispatchEvent, generateCacheHash, hashTile, stringToImage, vecArrToObj} from "../util/Utils";
+import {alert, dispatchEvent, generateCacheHash, getPixel, hashTile, stringToImage, vecArrToObj} from "../util/Utils";
 import {TileManager} from "./TileManager";
 import {TileLoader} from "./TileLoader";
 import {LowresTileLoader} from "./LowresTileLoader";
@@ -70,8 +70,8 @@ export class Map {
 			},
 			lowres: {
 				tileSize: {x: 32, z: 32},
-				scale: {x: 1, z: 1},
-				translate: {x: 2, z: 2}
+				lodFactor: 5,
+				lodCount: 3
 			}
 		};
 
@@ -86,7 +86,7 @@ export class Map {
 
 		/** @type {TileManager} */
 		this.hiresTileManager = null;
-		/** @type {TileManager} */
+		/** @type {TileManager[]} */
 		this.lowresTileManager = null;
 	}
 
@@ -116,10 +116,13 @@ export class Map {
                 this.hiresMaterial = this.createHiresMaterial(hiresVertexShader, hiresFragmentShader, uniforms, textures);
 
                 this.hiresTileManager = new TileManager(new Scene(), new TileLoader(`${this.data.dataUrl}tiles/0/`, this.hiresMaterial, this.data.hires, tileCacheHash), this.onTileLoad("hires"), this.onTileUnload("hires"), this.events);
-                this.lowresTileManager = new TileManager(new Scene(), new LowresTileLoader(`${this.data.dataUrl}tiles/1/`, lowresVertexShader, lowresFragmentShader, tileCacheHash), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+				this.hiresTileManager.scene.autoUpdate = false;
 
-                this.hiresTileManager.scene.autoUpdate = false;
-                this.lowresTileManager.scene.autoUpdate = false;
+                this.lowresTileManager = [];
+				for (let i = 0; i < this.data.lowres.lodCount; i++) {
+					this.lowresTileManager[i] = new TileManager(new Scene(), new LowresTileLoader(`${this.data.dataUrl}tiles/`, this.data.lowres, i + 1, lowresVertexShader, lowresFragmentShader, uniforms, tileCacheHash), this.onTileLoad("lowres"), this.onTileUnload("lowres"), this.events);
+					this.lowresTileManager[i].scene.autoUpdate = false;
+				}
 
                 alert(this.events, `Map '${this.data.id}' is loaded.`, "fine");
             });
@@ -158,8 +161,8 @@ export class Map {
 				};
 				this.data.lowres = {
 					tileSize: {...this.data.lowres.tileSize, ...vecArrToObj(worldSettings.lowres.tileSize, true)},
-					scale: {...this.data.lowres.scale, ...vecArrToObj(worldSettings.lowres.scale, true)},
-					translate: {...this.data.lowres.translate, ...vecArrToObj(worldSettings.lowres.translate, true)}
+					lodFactor: worldSettings.lowres.lodFactor !== undefined ? worldSettings.lowres.lodFactor : this.data.lowres.lodFactor,
+					lodCount: worldSettings.lowres.lodCount !== undefined ? worldSettings.lowres.lodCount : this.data.lowres.lodCount
 				};
 
 				alert(this.events, `Settings for map '${this.data.id}' loaded.`, "fine");
@@ -189,18 +192,21 @@ export class Map {
 	loadMapArea(x, z, hiresViewDistance, lowresViewDistance) {
 		if (!this.isLoaded) return;
 
-		let hiresX = Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x);
-		let hiresZ = Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z);
-		let hiresViewX = Math.floor(hiresViewDistance / this.data.hires.tileSize.x);
-		let hiresViewZ = Math.floor(hiresViewDistance / this.data.hires.tileSize.z);
-
-		let lowresX = Math.floor((x - this.data.lowres.translate.x) / this.data.lowres.tileSize.x);
-		let lowresZ = Math.floor((z - this.data.lowres.translate.z) / this.data.lowres.tileSize.z);
-		let lowresViewX = Math.floor(lowresViewDistance / this.data.lowres.tileSize.x);
-		let lowresViewZ = Math.floor(lowresViewDistance / this.data.lowres.tileSize.z);
-
+		const hiresX = Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x);
+		const hiresZ = Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z);
+		const hiresViewX = Math.floor(hiresViewDistance / this.data.hires.tileSize.x);
+		const hiresViewZ = Math.floor(hiresViewDistance / this.data.hires.tileSize.z);
 		this.hiresTileManager.loadAroundTile(hiresX, hiresZ, hiresViewX, hiresViewZ);
-		this.lowresTileManager.loadAroundTile(lowresX, lowresZ, lowresViewX, lowresViewZ);
+
+		for (let i = 0; i < this.lowresTileManager.length; i++) {
+			const lod = i + 1;
+			const scale = Math.pow(this.data.lowres.lodFactor, lod - 1);
+			const lowresX = Math.floor(x / (this.data.lowres.tileSize.x * scale));
+			const lowresZ = Math.floor(z / (this.data.lowres.tileSize.z * scale));
+			const lowresViewX = Math.floor(lowresViewDistance / this.data.lowres.tileSize.x);
+			const lowresViewZ = Math.floor(lowresViewDistance / this.data.lowres.tileSize.z);
+			this.lowresTileManager[i].loadAroundTile(lowresX, lowresZ, lowresViewX, lowresViewZ);
+		}
 	}
 
     /**
@@ -332,8 +338,12 @@ export class Map {
 		if (this.hiresTileManager) this.hiresTileManager.unload();
 		this.hiresTileManager = null;
 
-		if (this.lowresTileManager) this.lowresTileManager.unload();
-		this.lowresTileManager = null;
+		if (this.lowresTileManager) {
+			for (let i = 0; i < this.lowresTileManager.length; i++) {
+				this.lowresTileManager[i].unload();
+			}
+			this.lowresTileManager = null;
+		}
 
 		if (this.hiresMaterial) this.hiresMaterial.forEach(material => material.dispose());
 		this.hiresMaterial = null;
@@ -364,23 +374,40 @@ export class Map {
 
 		let hiresTileHash = hashTile(Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x), Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z));
 		let tile = this.hiresTileManager.tiles.get(hiresTileHash);
-		if (!tile || !tile.model) {
-			let lowresTileHash = hashTile(Math.floor((x - this.data.lowres.translate.x) / this.data.lowres.tileSize.x), Math.floor((z - this.data.lowres.translate.z) / this.data.lowres.tileSize.z));
-			tile = this.lowresTileManager.tiles.get(lowresTileHash);
-		}
 
-		if (!tile || !tile.model){
-			return false;
-		}
-
-		try {
-			let intersects = this.raycaster.intersectObjects([tile.model]);
-			if (intersects.length > 0) {
-				return intersects[0].point.y;
+		if (tile?.model) {
+			try {
+				let intersects = this.raycaster.intersectObjects([tile.model]);
+				if (intersects.length > 0) {
+					return intersects[0].point.y;
+				}
+			} catch (ignore) {
+				//empty
 			}
-		} catch (err) {
-			return false;
 		}
+
+		for (let i = 0; i < this.lowresTileManager.length; i++) {
+			const lod = i + 1;
+			const scale = Math.pow(this.data.lowres.lodFactor, lod - 1);
+			const scaledTileSize = {
+				x: this.data.lowres.tileSize.x * scale,
+				z: this.data.lowres.tileSize.z * scale
+			}
+			const tileX = Math.floor(x / scaledTileSize.x);
+			const tileZ = Math.floor(z / scaledTileSize.z);
+			let lowresTileHash = hashTile(tileX, tileZ);
+			tile = this.lowresTileManager[i].tiles.get(lowresTileHash);
+
+			if (!tile || !tile.model) continue;
+
+			const texture = tile.model.material.uniforms?.textureImage?.value?.image;
+			if (texture == null) continue;
+
+			const color = getPixel(texture, x - tileX * scaledTileSize.x, z - tileZ * scaledTileSize.z + this.data.lowres.tileSize.z);
+			return color[2];
+		}
+
+		return false;
 	}
 
 	dispose() {

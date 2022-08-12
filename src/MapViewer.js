@@ -27,7 +27,7 @@ import {Map} from "./map/Map";
 import {SkyboxScene} from "./skybox/SkyboxScene";
 import {ControlsManager} from "./controls/ControlsManager";
 import Stats from "./util/Stats";
-import {alert, dispatchEvent, elementOffset, generateCacheHash, htmlToElement} from "./util/Utils";
+import {alert, dispatchEvent, elementOffset, generateCacheHash, htmlToElement, softClamp} from "./util/Utils";
 import {TileManager} from "./map/TileManager";
 import {HIRES_VERTEX_SHADER} from "./map/hires/HiresVertexShader";
 import {HIRES_FRAGMENT_SHADER} from "./map/hires/HiresFragmentShader";
@@ -177,7 +177,14 @@ export class MapViewer {
 			this.raycaster.setFromCamera(normalizedScreenPos, this.camera);
 
 			// check Object3D interactions
-			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.map.lowresTileManager.scene, this.markers], true);
+			/*
+			const intersectScenes = [this.map.hiresTileManager.scene, this.markers];
+			for (let i = 0; i < this.map.lowresTileManager.length; i++) {
+				intersectScenes.push(this.map.lowresTileManager[i].scene);
+			}
+			*/
+
+			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.markers], true);
 			let hit = null;
 			let lowresHit = null;
 			let hiresHit = null;
@@ -201,9 +208,11 @@ export class MapViewer {
 						let parentRoot = object;
 						while(parentRoot.parent) parentRoot = parentRoot.parent;
 
+						/*
 						if (parentRoot === this.map.lowresTileManager.scene) {
 							if (!lowresHit) lowresHit = intersects[i];
 						}
+						*/
 
 						if (parentRoot === this.map.hiresTileManager.scene) {
 							if (!hiresHit) hiresHit = intersects[i];
@@ -216,9 +225,9 @@ export class MapViewer {
 							})) return;
 						}
 
-						if (parentRoot !== this.map.lowresTileManager.scene) {
+						//if (parentRoot !== this.map.lowresTileManager.scene) {
 							covered = true;
-						}
+						//}
 					}
 				}
 			}
@@ -288,8 +297,13 @@ export class MapViewer {
 			//update uniforms
 			this.data.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
 
-			this.renderer.render(this.map.lowresTileManager.scene, this.camera);
-			this.renderer.clearDepth();
+			const highestLod = this.map.lowresTileManager.length - 1;
+			for (let i = this.map.lowresTileManager.length - 1; i >= 0; i--) {
+				if (i === highestLod || this.controlsManager.distance < 1000 * Math.pow(this.map.data.lowres.lodFactor, i + 1)) {
+					this.renderer.render(this.map.lowresTileManager[i].scene, this.camera);
+					this.renderer.clearDepth();
+				}
+			}
 
 			if (this.controlsManager.distance < 1000) {
 				this.renderer.render(this.map.hiresTileManager.scene, this.camera);
@@ -363,7 +377,9 @@ export class MapViewer {
 
 		this.tileCacheHash = newTileCacheHash;
 		if (this.map) {
-			this.map.lowresTileManager.tileLoader.tileCacheHash = this.tileCacheHash;
+			for (let i = 0; i < this.map.lowresTileManager.length; i++) {
+				this.map.lowresTileManager[i].tileLoader.tileCacheHash = this.tileCacheHash;
+			}
 			this.map.hiresTileManager.tileLoader.tileCacheHash = this.tileCacheHash;
 		}
 	}

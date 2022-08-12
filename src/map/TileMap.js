@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import {ClampToEdgeWrapping, LinearFilter, Texture} from "three";
+import {ClampToEdgeWrapping, LinearFilter, NearestFilter, Texture} from "three";
 
 export class TileMap {
 

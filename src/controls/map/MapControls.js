@@ -83,6 +83,9 @@ export class MapControls {
 
         this.lastTap = -1;
         this.lastTapCenter = null;
+
+        this.minDistance = 5;
+        this.maxDistance = 100000;
     }
 
     /**
@@ -164,7 +167,7 @@ export class MapControls {
         this.keyZoom.update(delta, map);
         this.touchZoom.update(delta, map);
 
-        this.manager.distance = softClamp(this.manager.distance, 5, 10000, 0.8);
+        this.manager.distance = softClamp(this.manager.distance, this.minDistance, this.maxDistance, 0.8);
 
         // max angle for current distance
         let maxAngleForZoom = this.getMaxPerspectiveAngleForDistance(this.manager.distance);

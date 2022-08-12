@@ -33,34 +33,37 @@ import {
     NearestFilter,
     ClampToEdgeWrapping,
     NearestMipMapLinearFilter,
-    RepeatWrapping,
+    Vector2
 } from "three";
 
 export class LowresTileLoader {
 
-    constructor(tilePath, vertexShader, fragmentShader, tileCacheHash = 0, layer = 0) {
+    constructor(tilePath, tileSettings, lod, vertexShader, fragmentShader, uniforms, tileCacheHash = 0, layer = 0) {
         Object.defineProperty( this, 'isLowresTileLoader', { value: true } );
 
         this.tilePath = tilePath;
+        this.tileSettings = tileSettings;
+        this.lod = lod;
         this.layer = layer;
         this.tileCacheHash = tileCacheHash;
 
         this.vertexShader = vertexShader;
         this.fragmentShader = fragmentShader;
+        this.uniforms = uniforms;
 
         this.textureLoader = new TextureLoader();
         this.geometry = new PlaneBufferGeometry(
-            500, 500,
-            100, 100
+            tileSettings.tileSize.x + 1, tileSettings.tileSize.z + 1,
+            Math.ceil(100 / (lod * 2)), Math.ceil(100 / (lod * 2))
         );
         this.geometry.deleteAttribute('normal');
         this.geometry.deleteAttribute('uv');
         this.geometry.rotateX(-Math.PI / 2);
-        this.geometry.translate(250, 0, 250);
+        this.geometry.translate(tileSettings.tileSize.x / 2 + 1, 0, tileSettings.tileSize.x / 2 + 1);
     }
 
     load = (tileX, tileZ) => {
-        let tileUrl = this.tilePath + pathFromCoords(tileX, tileZ) + '.png';
+        let tileUrl = this.tilePath + this.lod + "/" + pathFromCoords(tileX, tileZ) + '.png';
 
         return new Promise((resolve, reject) => {
             this.textureLoader.load(tileUrl + '?' + this.tileCacheHash,
@@ -76,6 +79,13 @@ export class LowresTileLoader {
 
                     let material = new ShaderMaterial({
                         uniforms: {
+                            ...this.uniforms,
+                            tileSize: {
+                                value: new Vector2(this.tileSettings.tileSize.x, this.tileSettings.tileSize.z)
+                            },
+                            textureSize: {
+                                value: new Vector2(texture.image.width, texture.image.height)
+                            },
                             textureImage: {
                                 type: 't',
                                 value: texture
@@ -94,13 +104,12 @@ export class LowresTileLoader {
                     let object = new Mesh(this.geometry, material);
                     if (this.layer) object.layers.set(this.layer);
 
-                    let tileSize = {x:500, z:500};
-                    let translate = {x:0, z:0};
-                    let scale = {x:1, z:1};
-                    object.position.set(tileX * tileSize.x + translate.x, 0, tileZ * tileSize.z + translate.z);
-                    object.scale.set(scale.x, 1, scale.z);
+                    const scale = Math.pow(this.tileSettings.lodFactor, this.lod - 1);
+                    object.position.set(tileX * this.tileSettings.tileSize.x * scale, 0, tileZ * this.tileSettings.tileSize.z * scale);
+                    object.scale.set(scale, 1, scale);
 
                     object.userData.tileUrl = tileUrl;
+                    object.userData.tileType = "lowres";
 
                     object.updateMatrixWorld(true);
 

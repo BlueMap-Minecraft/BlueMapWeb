@@ -39,41 +39,59 @@ struct TileMap {
 	vec2 pos; 
 };
 
-//uniform float sunlightStrength;
-//uniform float ambientLight;
-//uniform TileMap hiresTileMap;
+uniform float sunlightStrength;
+uniform float ambientLight;
+uniform TileMap hiresTileMap;
 uniform sampler2D textureImage;
+uniform vec2 tileSize;
+uniform vec2 textureSize;
 
 varying vec3 vPosition;
 varying vec3 vWorldPosition;
-varying vec3 vNormal;
-varying vec2 vUv;
-varying vec3 vColor;
 varying float vDistance;
+
+float metaToHeight(vec4 meta) {
+	float heightUnsigned = meta.g * 65280.0 + meta.b * 255.0;
+	if (heightUnsigned >= 32768.0) {
+		return -(65535.0 - heightUnsigned);
+	} else {
+		return heightUnsigned;	
+	}
+}
+
+float metaToLight(vec4 meta) {
+	return meta.r * 255.0;
+}
+
+vec2 posToColorUV(vec2 pos) {
+	return vec2(pos.x / textureSize.x, min(pos.y, tileSize.y) / textureSize.y);
+}
+
+vec2 posToMetaUV(vec2 pos) {
+	return vec2(pos.x / textureSize.x, pos.y / textureSize.y + 0.5);
+}
 
 void main() {
 	//discard if hires tile is loaded at that position
-	//if (vDistance < 1900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r >= 1.0) discard;
+	//if (vDistance < 900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r > 0.75) discard;
 	
-	//vec4 color = vec4(vColor, 1.0);
-
-	//float diff = max(dot(vNormal, vec3(0.3637, 0.7274, 0.5819)), 0.0) * 0.3 + 0.7;
-	//color *= diff;
-
-	//color *= mix(sunlightStrength, 1.0, ambientLight);
-
-	//vec4 color = vec4(0.3637, 0.7274, 0.5819, 1.0);
-	vec4 color = texture(textureImage, vec2(vPosition.x / 500.0, vPosition.z / 1000.0));
+	vec4 color = texture(textureImage, posToColorUV(vPosition.xz));
+	vec4 meta = texture(textureImage, posToMetaUV(vPosition.xz));
 	
-	float height = texture(textureImage, vec2(vPosition.x / 500.0, (vPosition.z + 500.0) / 1000.0)).b * 255.0;
-	float heightX = texture(textureImage, vec2((vPosition.x + 1.0) / 500.0, (vPosition.z + 500.0) / 1000.0)).b * 255.0;
-	float heightZ = texture(textureImage, vec2(vPosition.x / 500.0, (vPosition.z + 501.0) / 1000.0)).b * 255.0;
+	float height = metaToHeight(meta);
+	
+	float heightX = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(1.0, 0.0))));
+	float heightZ = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(0.0, 1.0))));
 	float diff = (height - heightX) + (height - heightZ);
-	
 	color.rgb += clamp(diff * 0.04, -0.2, 0.04);
+	
+	float blockLight = metaToLight(meta);
+	float light = mix(blockLight, 15.0, sunlightStrength);
+	color.rgb *= mix(ambientLight, 1.0, light / 15.0);
 	
 	gl_FragColor = color;
 	
 	${ShaderChunk.logdepthbuf_fragment}
 }
+
 `;

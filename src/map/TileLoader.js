@@ -79,6 +79,7 @@ export class TileLoader {
                     object.scale.set(scale.x, 1, scale.z);
 
                     object.userData.tileUrl = tileUrl;
+                    object.userData.tileType = "hires";
 
                     object.updateMatrixWorld(true);
 

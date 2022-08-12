@@ -60,7 +60,7 @@ export class Tile {
         return tileLoader.load(this.x, this.z)
             .then(model => {
                 if (this.unloaded){
-                    model.geometry.dispose();
+                    Tile.disposeModel(model);
                     return;
                 }
 
@@ -77,8 +77,20 @@ export class Tile {
         if (this.model) {
             this.onUnload(this);
 
-            this.model.geometry.dispose();
+            Tile.disposeModel(this.model);
+
             this.model = null;
+        }
+    }
+
+    static disposeModel(model) {
+        if (model.userData?.tileType === "hires") {
+            model.geometry.dispose();
+        }
+
+        else if (model.userData?.tileType === "lowres") {
+            model.material.uniforms.textureImage.value.dispose();
+            model.material.dispose();
         }
     }
 
