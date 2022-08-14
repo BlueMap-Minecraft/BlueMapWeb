@@ -38,13 +38,13 @@ import {
 
 export class LowresTileLoader {
 
-    constructor(tilePath, tileSettings, lod, vertexShader, fragmentShader, uniforms, tileCacheHash = 0, layer = 0) {
+    constructor(tilePath, tileSettings, lod, vertexShader, fragmentShader, uniforms, loadBlocker = () => Promise.resolve(), tileCacheHash = 0) {
         Object.defineProperty( this, 'isLowresTileLoader', { value: true } );
 
         this.tilePath = tilePath;
         this.tileSettings = tileSettings;
         this.lod = lod;
-        this.layer = layer;
+        this.loadBlocker = loadBlocker;
         this.tileCacheHash = tileCacheHash;
 
         this.vertexShader = vertexShader;
@@ -62,12 +62,13 @@ export class LowresTileLoader {
         this.geometry.translate(tileSettings.tileSize.x / 2 + 1, 0, tileSettings.tileSize.x / 2 + 1);
     }
 
-    load = (tileX, tileZ) => {
+    load = (tileX, tileZ, cancelCheck = () => false) => {
         let tileUrl = this.tilePath + this.lod + "/" + pathFromCoords(tileX, tileZ) + '.png';
 
+        //await this.loadBlocker();
         return new Promise((resolve, reject) => {
             this.textureLoader.load(tileUrl + '?' + this.tileCacheHash,
-                texture => {
+                async texture => {
                     texture.anisotropy = 1;
                     texture.generateMipmaps = false;
                     texture.magFilter = NearestFilter;
@@ -76,6 +77,13 @@ export class LowresTileLoader {
                     texture.wrapT = ClampToEdgeWrapping;
                     texture.flipY = false;
                     texture.flatShading = true;
+
+                    await this.loadBlocker();
+                    if (cancelCheck()){
+                        texture.dispose();
+                        reject({status: "cancelled"});
+                        return;
+                    }
 
                     let material = new ShaderMaterial({
                         uniforms: {
@@ -102,7 +110,6 @@ export class LowresTileLoader {
                     });
 
                     let object = new Mesh(this.geometry, material);
-                    if (this.layer) object.layers.set(this.layer);
 
                     const scale = Math.pow(this.tileSettings.lodFactor, this.lod - 1);
                     object.position.set(tileX * this.tileSettings.tileSize.x * scale, 0, tileZ * this.tileSettings.tileSize.z * scale);

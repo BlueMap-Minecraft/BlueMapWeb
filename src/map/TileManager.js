@@ -82,13 +82,18 @@ export class TileManager {
         this.viewDistanceX = viewDistanceX;
         this.viewDistanceZ = viewDistanceZ;
 
+        if (viewDistanceX <= 0 || viewDistanceZ <= 0) {
+            this.removeAllTiles();
+            return;
+        }
+
         if (unloadTiles || this.centerTile.x !== x || this.centerTile.y !== z) {
             this.centerTile.set(x, z);
             this.removeFarTiles();
 
             this.tileMap.setAll(TileMap.EMPTY);
             this.tiles.forEach(tile => {
-                if (!tile.loading) {
+                if (!tile.loading && !tile.unloaded) {
                     this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
                 }
             });
@@ -187,7 +192,8 @@ export class TileManager {
         this.tiles.set(tileHash, tile);
         tile.load(this.tileLoader)
             .then(() => {
-                this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
+                if (!tile.unloaded)
+                    this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
 
                 if (this.loadTimeout) clearTimeout(this.loadTimeout);
                 this.loadTimeout = setTimeout(this.loadCloseTiles, 0);
@@ -200,7 +206,7 @@ export class TileManager {
                 //alert(this.events, "Failed to load tile: " + error.type, "warning");
             })
             .finally(() => {
-                this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
+                //this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
                 this.currentlyLoading--;
             });
 

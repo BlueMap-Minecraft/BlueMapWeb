@@ -35,19 +35,19 @@ export class TileLoader {
      *	    scale: {x: number, z: number},
      *      translate: {x: number, z: number}
      * }}
+     * @param loadBlocker {function: Promise}
      * @param tileCacheHash {number}
-     * @param layer {number}
      */
-    constructor(tilePath, material, tileSettings, tileCacheHash = 0, layer = 0) {
+    constructor(tilePath, material, tileSettings, loadBlocker = () => Promise.resolve(), tileCacheHash = 0) {
         Object.defineProperty( this, 'isTileLoader', { value: true } );
 
         this.tilePath = tilePath;
         this.material = material;
         this.tileSettings = tileSettings;
 
-        this.layer = layer;
-
         this.tileCacheHash = tileCacheHash;
+
+        this.loadBlocker = loadBlocker;
 
         this.fileLoader = new FileLoader();
         this.fileLoader.setResponseType('json');
@@ -55,22 +55,28 @@ export class TileLoader {
         this.bufferGeometryLoader = new BufferGeometryLoader();
     }
 
-    load = (tileX, tileZ) => {
+    load = (tileX, tileZ, cancelCheck = () => false) => {
         let tileUrl = this.tilePath + pathFromCoords(tileX, tileZ) + '.json';
 
+        //await this.loadBlocker();
         return new Promise((resolve, reject) => {
             this.fileLoader.load(tileUrl + '?' + this.tileCacheHash,
-                json => {
+                async json => {
                     let geometryJson = json.tileGeometry || {};
                     if (!geometryJson.type || geometryJson.type !== 'BufferGeometry'){
                         reject({status: "empty"});
                         return;
                     }
 
+                    await this.loadBlocker();
+                    if (cancelCheck()){
+                        reject({status: "cancelled"});
+                        return;
+                    }
+
                     let geometry = this.bufferGeometryLoader.parse(geometryJson);
 
                     let object = new Mesh(geometry, this.material);
-                    if (this.layer) object.layers.set(this.layer);
 
                     let tileSize = this.tileSettings.tileSize;
                     let translate = this.tileSettings.translate;

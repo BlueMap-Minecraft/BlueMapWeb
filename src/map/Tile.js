@@ -57,7 +57,7 @@ export class Tile {
         this.unload();
 
         this.unloaded = false;
-        return tileLoader.load(this.x, this.z)
+        return tileLoader.load(this.x, this.z, () => this.unloaded)
             .then(model => {
                 if (this.unloaded){
                     Tile.disposeModel(model);

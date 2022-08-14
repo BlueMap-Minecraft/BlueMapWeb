@@ -73,7 +73,7 @@ vec2 posToMetaUV(vec2 pos) {
 
 void main() {
 	//discard if hires tile is loaded at that position
-	//if (vDistance < 900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r > 0.75) discard;
+	if (vDistance < 900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r > 0.75) discard;
 	
 	vec4 color = texture(textureImage, posToColorUV(vPosition.xz));
 	vec4 meta = texture(textureImage, posToMetaUV(vPosition.xz));

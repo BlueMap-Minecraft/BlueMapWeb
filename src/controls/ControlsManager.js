@@ -58,6 +58,7 @@ export class ControlsManager {
 		this.lastTilt = this.tilt;
 
 		this.lastMapUpdatePosition = this.position.clone();
+		this.lastMapUpdateDistance = this.distance;
 
 		this.averageDeltaTime = 16;
 
@@ -156,9 +157,11 @@ export class ControlsManager {
 
 			if (
 				Math.abs(this.lastMapUpdatePosition.x - this.position.x) >= triggerDistance ||
-				Math.abs(this.lastMapUpdatePosition.z - this.position.z) >= triggerDistance
+				Math.abs(this.lastMapUpdatePosition.z - this.position.z) >= triggerDistance ||
+				(this.distance < 1000 && this.lastMapUpdateDistance > 1000)
 			) {
 				this.lastMapUpdatePosition = this.position.clone();
+				this.lastMapUpdateDistance = this.distance;
 				this.mapViewer.loadMapArea(this.position.x, this.position.z);
 			}
 		}

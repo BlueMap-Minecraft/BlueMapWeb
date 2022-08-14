@@ -369,7 +369,11 @@ export class MapViewer {
 
 	updateLoadedMapArea = () => {
 		if (!this.map) return;
-		this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, this.data.loadedHiresViewDistance, this.data.loadedLowresViewDistance);
+		if (this.controlsManager.distance < 1000) {
+			this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, this.data.loadedHiresViewDistance, this.data.loadedLowresViewDistance);
+		} else {
+			this.map.loadMapArea(this.data.loadedCenter.x, this.data.loadedCenter.y, 0, this.data.loadedLowresViewDistance);
+		}
 	}
 
 	clearTileCache(newTileCacheHash) {
