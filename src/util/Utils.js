@@ -387,6 +387,6 @@ pixel.height = 1;
 const pixelContext = pixel.getContext('2d');
 
 export const getPixel = (img, x, y) => {
-    pixelContext.drawImage(img, x, y, 1, 1, 0, 0, 1, 1);
+    pixelContext.drawImage(img, Math.floor(x), Math.floor(y), 1, 1, 0, 0, 1, 1);
     return pixelContext.getImageData(0, 0, 1, 1).data;
 }

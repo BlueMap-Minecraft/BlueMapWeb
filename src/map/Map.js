@@ -405,8 +405,16 @@ export class Map {
 			const texture = tile.model.material.uniforms?.textureImage?.value?.image;
 			if (texture == null) continue;
 
-			const color = getPixel(texture, x - tileX * scaledTileSize.x, z - tileZ * scaledTileSize.z + this.data.lowres.tileSize.z);
-			return color[2];
+			const color = getPixel(texture, x - tileX * scaledTileSize.x, z - tileZ * scaledTileSize.z + this.data.lowres.tileSize.z + 1);
+
+			let heightUnsigned = color[1] * 256.0 + color[2];
+			if (heightUnsigned >= 32768.0) {
+				return -(65535.0 - heightUnsigned);
+			} else {
+				return heightUnsigned;
+			}
+
+
 		}
 
 		return false;
