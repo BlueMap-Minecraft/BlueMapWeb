@@ -53,7 +53,7 @@ void main() {
 	vPosition = position;
 	
 	vec4 meta = texture(textureImage, posToMetaUV(position.xz));
-	vPosition.y += metaToHeight(meta);
+	vPosition.y = metaToHeight(meta) + 1.0 - position.x * 0.0001 - position.z * 0.0002; //including small offset-tilt to prevent z-fighting
 	
 	vec4 worldPos = modelMatrix * vec4(vPosition, 1);
 	vec4 viewPos = viewMatrix * worldPos;

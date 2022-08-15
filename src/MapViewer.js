@@ -177,16 +177,14 @@ export class MapViewer {
 			this.raycaster.setFromCamera(normalizedScreenPos, this.camera);
 
 			// check Object3D interactions
-			/*
 			const intersectScenes = [this.map.hiresTileManager.scene, this.markers];
 			for (let i = 0; i < this.map.lowresTileManager.length; i++) {
 				intersectScenes.push(this.map.lowresTileManager[i].scene);
 			}
-			*/
 
-			let intersects = this.raycaster.intersectObjects([this.map.hiresTileManager.scene, this.markers], true);
+			let intersects = this.raycaster.intersectObjects(intersectScenes, true);
 			let hit = null;
-			let lowresHit = null;
+			let lowresHits = [];
 			let hiresHit = null;
 			let covered = false;
 			for (let i = 0; i < intersects.length; i++) {
@@ -208,11 +206,11 @@ export class MapViewer {
 						let parentRoot = object;
 						while(parentRoot.parent) parentRoot = parentRoot.parent;
 
-						/*
-						if (parentRoot === this.map.lowresTileManager.scene) {
-							if (!lowresHit) lowresHit = intersects[i];
+						for (let l = 0; l < this.map.lowresTileManager.length; l++) {
+							if (parentRoot === this.map.lowresTileManager[l].scene) {
+								if (!lowresHits[l]) lowresHits[l] = intersects[i];
+							}
 						}
-						*/
 
 						if (parentRoot === this.map.hiresTileManager.scene) {
 							if (!hiresHit) hiresHit = intersects[i];
@@ -225,9 +223,9 @@ export class MapViewer {
 							})) return;
 						}
 
-						//if (parentRoot !== this.map.lowresTileManager.scene) {
+						if (parentRoot !== this.map.lowresTileManager[0].scene) {
 							covered = true;
-						//}
+						}
 					}
 				}
 			}
@@ -237,7 +235,7 @@ export class MapViewer {
 				data: data,
 				hit: hit,
 				hiresHit: hiresHit,
-				lowresHit: lowresHit,
+				lowresHits: lowresHits,
 				intersections: intersects,
 				ray: this.raycaster.ray
 			});
