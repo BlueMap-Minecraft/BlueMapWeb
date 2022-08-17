@@ -280,21 +280,30 @@ export class MapViewer {
 			delta: delta,
 		});
 
-		//prepare camera
-		this.camera.updateProjectionMatrix();
-		this.skyboxCamera.rotation.copy(this.camera.rotation);
-		this.skyboxCamera.updateProjectionMatrix();
-
 		//render
 		this.renderer.clear();
 
+		//prepare skybox camera
+		this.skyboxCamera.rotation.copy(this.camera.rotation);
+		this.skyboxCamera.updateProjectionMatrix();
+
+		// render skybox
 		this.renderer.render(this.skyboxScene, this.skyboxCamera);
 		this.renderer.clearDepth();
 
 		if (this.map && this.map.isLoaded) {
+
 			//update uniforms
 			this.data.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
 
+			// prepare camera for lowres
+			const cameraFar = this.camera.far;
+			if (this.controlsManager.distance < 1000) {
+				this.camera.far = 1000000; // disable far clipping for lowres
+			}
+			this.camera.updateProjectionMatrix();
+
+			// render lowres
 			const highestLod = this.map.lowresTileManager.length - 1;
 			for (let i = this.map.lowresTileManager.length - 1; i >= 0; i--) {
 				if (i === highestLod || this.controlsManager.distance < 1000 * Math.pow(this.map.data.lowres.lodFactor, i + 1)) {
@@ -303,7 +312,11 @@ export class MapViewer {
 				}
 			}
 
+			this.camera.far = cameraFar; // reset far clipping
+
+			// render hires
 			if (this.controlsManager.distance < 1000) {
+				this.camera.updateProjectionMatrix();
 				this.renderer.render(this.map.hiresTileManager.scene, this.camera);
 			}
 		}
