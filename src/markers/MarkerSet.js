@@ -105,7 +105,7 @@ export class MarkerSet extends Scene {
             markerSet = new MarkerSet(markerSetId);
             this.add(markerSet);
 
-            if (data.defaultHide) {
+            if (data.defaultHidden) {
                 markerSet.visible = false;
             }
         }
