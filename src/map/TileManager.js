@@ -192,21 +192,11 @@ export class TileManager {
         this.tiles.set(tileHash, tile);
         tile.load(this.tileLoader)
             .then(() => {
-                if (!tile.unloaded)
-                    this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
-
                 if (this.loadTimeout) clearTimeout(this.loadTimeout);
                 this.loadTimeout = setTimeout(this.loadCloseTiles, 0);
             })
-            .catch(error => {
-                if (error.status && error.status === "empty") return;
-                if (error.target && error.target.status === 404) return;
-                if (error.type && error.type === "abort") return;
-
-                //alert(this.events, "Failed to load tile: " + error.type, "warning");
-            })
+            .catch(error => {})
             .finally(() => {
-                //this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
                 this.currentlyLoading--;
             });
 
@@ -214,7 +204,7 @@ export class TileManager {
     }
 
     handleLoadedTile = tile => {
-        //this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
+        this.tileMap.setTile(tile.x - this.centerTile.x + TileManager.tileMapHalfSize, tile.z - this.centerTile.y + TileManager.tileMapHalfSize, TileMap.LOADED);
 
         this.scene.add(tile.model);
         this.onTileLoad(tile);
