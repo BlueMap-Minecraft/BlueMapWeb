@@ -53,6 +53,7 @@ export class MarkerManager {
         this.fileUrl = fileUrl;
         this.fileType = fileType;
         this.events = events;
+        this.disposed = false;
 
         /** @type {NodeJS.Timeout} */
         this._updateInterval = null;
@@ -67,6 +68,7 @@ export class MarkerManager {
         if (this._updateInterval) clearTimeout(this._updateInterval);
         if (ms > 0) {
             let autoUpdate = () => {
+                if (this.disposed) return;
                 this.update()
                     .then(success => {
                         if (success) {
@@ -153,6 +155,7 @@ export class MarkerManager {
      * Stops automatic-updates and disposes all markersets and markers managed by this manager
      */
     dispose() {
+        this.disposed = true;
         this.setAutoUpdateInterval(0);
         this.clear();
     }
