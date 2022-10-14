@@ -36,6 +36,8 @@ export class CombinedCamera extends PerspectiveCamera {
     constructor(fov, aspect, near, far, ortho) {
         super(fov, aspect, near, far);
 
+        this.needsUpdate = true;
+
         this.data = {
             fov: this.fov,
             aspect: this.aspect,
@@ -49,29 +51,31 @@ export class CombinedCamera extends PerspectiveCamera {
         // redirect parent properties
         Object.defineProperty(this, "fov", {
             get() { return this.data.fov },
-            set(value) { this.data.fov = value }
+            set(value) { if (value !== this.data.fov) { this.data.fov = value; this.needsUpdate = true }}
         });
         Object.defineProperty(this, "aspect", {
             get() { return this.data.aspect },
-            set(value) { this.data.aspect = value }
+            set(value) { if (value !== this.data.aspect) { this.data.aspect = value; this.needsUpdate = true }}
         });
         Object.defineProperty(this, "near", {
             get() { return this.data.near },
-            set(value) { this.data.near = value }
+            set(value) { if (value !== this.data.near) { this.data.near = value; this.needsUpdate = true }}
         });
         Object.defineProperty(this, "far", {
             get() { return this.data.far },
-            set(value) { this.data.far = value }
+            set(value) { if (value !== this.data.far) { this.data.far = value; this.needsUpdate = true }}
         });
         Object.defineProperty(this, "zoom", {
             get() { return this.data.zoom },
-            set(value) { this.data.zoom = value }
+            set(value) { if (value !== this.data.zoom) { this.data.zoom = value; this.needsUpdate = true }}
         });
 
         this.updateProjectionMatrix();
     }
 
     updateProjectionMatrix() {
+        if (!this.needsUpdate) return;
+
         if (!this.ortographicProjection)
             this.ortographicProjection = new Matrix4();
 
@@ -121,6 +125,7 @@ export class CombinedCamera extends PerspectiveCamera {
 
         this.projectionMatrixInverse.copy( this.projectionMatrix ).invert();
 
+        this.needsUpdate = false;
     }
 
     /**
@@ -162,7 +167,10 @@ export class CombinedCamera extends PerspectiveCamera {
      * @param value {number}
      */
     set ortho(value) {
-        this.data.ortho = value;
+        if (value !== this.data.ortho){
+            this.data.ortho = value;
+            this.needsUpdate = true;
+        }
     }
 
     /**
@@ -176,6 +184,10 @@ export class CombinedCamera extends PerspectiveCamera {
      * @param value {number}
      */
     set distance(value) {
-        this.data.distance = value;
+        if (value !== this.data.distance) {
+            this.data.distance = value;
+            this.needsUpdate = true;
+        }
     }
+
 }

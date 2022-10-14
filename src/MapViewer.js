@@ -95,6 +95,7 @@ export class MapViewer {
 
 		this.camera = new CombinedCamera(75, 1, 0.1, 10000, 0);
 		this.skyboxCamera = new PerspectiveCamera(75, 1, 0.1, 10000);
+		this.skyboxCamera.updateProjectionMatrix();
 
 		this.controlsManager = new ControlsManager(this, this.camera);
 
@@ -280,12 +281,11 @@ export class MapViewer {
 			delta: delta,
 		});
 
-		//render
+		// render
 		this.renderer.clear();
 
-		//prepare skybox camera
+		// prepare skybox camera
 		this.skyboxCamera.rotation.copy(this.camera.rotation);
-		this.skyboxCamera.updateProjectionMatrix();
 
 		// render skybox
 		this.renderer.render(this.skyboxScene, this.skyboxCamera);
@@ -293,8 +293,19 @@ export class MapViewer {
 
 		if (this.map && this.map.isLoaded) {
 
-			//update uniforms
+			// shift whole scene including camera towards 0,0 to tackle shader-precision issues
+			const s = 10000;
+			const sX = Math.round(this.camera.position.x / s) * s;
+			const sZ = Math.round(this.camera.position.z / s) * s;
+			this.camera.position.x -= sX;
+			this.camera.position.z -= sZ;
+
+			// update uniforms
 			this.data.uniforms.hiresTileMap.value.pos.copy(this.map.hiresTileManager.centerTile);
+			this.data.uniforms.hiresTileMap.value.translate.set(
+				this.map.data.hires.translate.x - sX,
+				this.map.data.hires.translate.z - sZ
+			);
 
 			// prepare camera for lowres
 			const cameraFar = this.camera.far;
@@ -307,7 +318,10 @@ export class MapViewer {
 			const highestLod = this.map.lowresTileManager.length - 1;
 			for (let i = this.map.lowresTileManager.length - 1; i >= 0; i--) {
 				if (i === highestLod || this.controlsManager.distance < 1000 * Math.pow(this.map.data.lowres.lodFactor, i + 1)) {
-					this.renderer.render(this.map.lowresTileManager[i].scene, this.camera);
+					let scenePos = this.map.lowresTileManager[i].scene.position;
+					scenePos.x = -sX;
+					scenePos.z = -sZ;
+					this.renderer.render(this.map.lowresTileManager[i].sceneParent, this.camera);
 					this.renderer.clearDepth();
 				}
 			}
@@ -317,8 +331,16 @@ export class MapViewer {
 			// render hires
 			if (this.controlsManager.distance < 1000) {
 				this.camera.updateProjectionMatrix();
-				this.renderer.render(this.map.hiresTileManager.scene, this.camera);
+				let scenePos = this.map.hiresTileManager.scene.position;
+				scenePos.x = -sX;
+				scenePos.z = -sZ;
+				this.renderer.render(this.map.hiresTileManager.sceneParent, this.camera);
 			}
+
+			// shift back
+			this.camera.position.x += sX;
+			this.camera.position.z += sZ;
+
 		}
 
 		// render markers

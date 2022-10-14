@@ -22,7 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import { Vector2 } from 'three';
+import { Vector2, Scene, Group } from 'three';
 import  { Tile } from './Tile.js';
 import {alert, hashTile} from '../util/Utils.js';
 import {TileMap} from "./TileMap";
@@ -33,17 +33,19 @@ export class TileManager {
     static tileMapHalfSize = TileManager.tileMapSize / 2;
 
     /**
-     * @param scene {THREE.Scene}
      * @param tileLoader {TileLoader | LowresTileLoader}
      * @param onTileLoad {function(Tile)}
      * @param onTileUnload {function(Tile)}
      * @param events {EventTarget}
      */
-    constructor(scene, tileLoader, onTileLoad = null, onTileUnload = null, events = null) {
+    constructor(tileLoader, onTileLoad = null, onTileUnload = null, events = null) {
         Object.defineProperty( this, 'isTileManager', { value: true } );
 
+        this.sceneParent = new Scene();
+        this.scene = new Group();
+        this.sceneParent.add(this.scene);
+
         this.events = events;
-        this.scene = scene;
         this.tileLoader = tileLoader;
 
         this.onTileLoad = onTileLoad || function(){};
