@@ -188,6 +188,7 @@ export class MapViewer {
 			let lowresHits = [];
 			let hiresHit = null;
 			let covered = false;
+
 			for (let i = 0; i < intersects.length; i++) {
 				if (intersects[i].object){
 					let object = intersects[i].object;
@@ -208,12 +209,12 @@ export class MapViewer {
 						while(parentRoot.parent) parentRoot = parentRoot.parent;
 
 						for (let l = 0; l < this.map.lowresTileManager.length; l++) {
-							if (parentRoot === this.map.lowresTileManager[l].scene) {
+							if (parentRoot === this.map.lowresTileManager[l].sceneParent) {
 								if (!lowresHits[l]) lowresHits[l] = intersects[i];
 							}
 						}
 
-						if (parentRoot === this.map.hiresTileManager.scene) {
+						if (parentRoot === this.map.hiresTileManager.sceneParent) {
 							if (!hiresHit) hiresHit = intersects[i];
 						}
 
@@ -224,7 +225,7 @@ export class MapViewer {
 							})) return;
 						}
 
-						if (parentRoot !== this.map.lowresTileManager[0].scene) {
+						if (parentRoot !== this.map.lowresTileManager[0].sceneParent) {
 							covered = true;
 						}
 					}
