@@ -79,11 +79,11 @@ export class MarkerSet extends Scene {
         // add & update MarkerSets
         Object.keys(data).forEach(markerSetId => {
             if (updatedMarkerSets.has(markerSetId)) return;
+            updatedMarkerSets.add(markerSetId);
 
             let markerSetData = data[markerSetId];
             try {
                 this.updateMarkerSetFromData(markerSetId, markerSetData);
-                updatedMarkerSets.add(markerSetId);
             } catch (err) {
                 alert(this.events, err, "fine");
             }

@@ -129,7 +129,7 @@ export const alert = (element, message, level = "info") => {
     });
 
     // log alert to console
-    if (printToConsole) {
+    if (printToConsole !== false) {
         if (level === "info") {
             console.log(`[BlueMap/${level}]`, message);
         } else if (level === "warning") {
