@@ -86,6 +86,8 @@ export class PoiMarker extends HtmlMarker {
      *      position: {x: number, y: number, z: number},
      *      anchor: {x: number, y: number},
      *      iconAnchor: {x: number, y: number},
+     *      scale: {x: number, y: number},
+     *      iconFilter: string,
      *      label: string,
      *      icon: string,
      *      minDistance: number,
@@ -106,6 +108,11 @@ export class PoiMarker extends HtmlMarker {
         //this.anchor.setX(anch.x || 0);
         //this.anchor.setY(anch.y || 0);
 
+        // update image style
+        let scale = markerData.scale || {};
+        this.iconElement.style.width = scale.x ? `${scale.x}px` : null;
+        this.iconElement.style.height = scale.y ? `${scale.y}px` : null;
+        this.iconElement.style.filter = markerData.iconFilter || null;
 
         // update label
         if (this.data.label !== markerData.label){
