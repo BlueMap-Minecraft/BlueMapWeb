@@ -53,9 +53,9 @@ export class HtmlMarker extends Marker {
 
     onBeforeRender(renderer, scene, camera) {
         if (this.fadeDistanceMax === Number.MAX_VALUE && this.fadeDistanceMin <= 0){
-            this.element.style.opacity = undefined;
+            this.element.parentNode.style.opacity = undefined;
         } else {
-            this.element.style.opacity = Marker.calculateDistanceOpacity(this.position, camera, this.fadeDistanceMin, this.fadeDistanceMax).toString();
+            this.element.parentNode.style.opacity = Marker.calculateDistanceOpacity(this.position, camera, this.fadeDistanceMin, this.fadeDistanceMax).toString();
         }
     }
 
