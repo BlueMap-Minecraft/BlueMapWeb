@@ -28,8 +28,8 @@ export const LOWRES_FRAGMENT_SHADER = `
 ${ShaderChunk.logdepthbuf_pars_fragment}
 
 #define PI 3.1415926535897932
-#define PI_HALF 1.5707963267948966
 #define PI_D10 0.3141592653589793
+#define PI_D5 0.6283185307179586
 
 #ifndef texture
 	#define texture texture2D
@@ -107,7 +107,7 @@ void main() {
 		}
 		occRGB += ao * 0.1;
 		
-		color.rgb = mix(defaultRGB, occRGB, smoothstep(PI_HALF + PI_D10, PI - PI_D10, acos(clamp(viewMatrix[1][1] - 1.0, -1.0, 0.0))));
+		color.rgb = mix(defaultRGB, occRGB, smoothstep(PI - PI_D5, PI - PI_D10, acos(-clamp(viewMatrix[1][2], 0.0, 1.0))));
 	} else {
 		color.rgb = defaultRGB;
 	}
