@@ -27,6 +27,10 @@ import { ShaderChunk } from 'three';
 export const LOWRES_FRAGMENT_SHADER = `
 ${ShaderChunk.logdepthbuf_pars_fragment}
 
+#define PI 3.1415926535897932
+#define PI_HALF 1.5707963267948966
+#define PI_D10 0.3141592653589793
+
 #ifndef texture
 	#define texture texture2D
 #endif
@@ -83,7 +87,25 @@ void main() {
 	float heightX = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(1.0, 0.0))));
 	float heightZ = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(0.0, 1.0))));
 	float diff = (height - heightX) + (height - heightZ);
-	color.rgb += clamp(diff * 0.04, -0.2, 0.04);
+	vec3 defaultRGB = color.rgb + clamp(diff * 0.04, -0.2, 0.04);
+	vec3 occRGB = color.rgb + clamp(diff * 0.02, -0.1, 0.04);
+	
+	float ao = 0.0;
+	const float r = 3.0;
+	const float step = 0.2;
+	for (float vx = -r; vx <= r; vx++) {
+		for (float vz = -r; vz <= r; vz++) {
+			diff = height - metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(vx * step, vz * step))));
+			if (diff < 0.0) {
+				ao -= step / r;            
+			}
+		}
+	}
+	occRGB += ao * 0.1;
+	
+	vec3 rgb = mix(defaultRGB, occRGB, smoothstep(PI_HALF + PI_D10, PI - PI_D10, acos(clamp(viewMatrix[1][1] - 1.0, -1.0, 0.0))));
+	
+	color.rgb = rgb;
 	
 	float blockLight = metaToLight(meta);
 	float light = mix(blockLight, 15.0, sunlightStrength);
