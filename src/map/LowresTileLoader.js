@@ -97,7 +97,8 @@ export class LowresTileLoader {
                             textureImage: {
                                 type: 't',
                                 value: texture
-                            }
+                            },
+                            lod: {value: this.lod}
                         },
                         vertexShader: this.vertexShader,
                         fragmentShader: this.fragmentShader,

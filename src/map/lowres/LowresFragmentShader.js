@@ -49,6 +49,7 @@ uniform TileMap hiresTileMap;
 uniform sampler2D textureImage;
 uniform vec2 tileSize;
 uniform vec2 textureSize;
+uniform int lod;
 
 varying vec3 vPosition;
 varying vec3 vWorldPosition;
@@ -75,6 +76,7 @@ vec2 posToMetaUV(vec2 pos) {
 	return vec2(pos.x / textureSize.x, pos.y / textureSize.y + 0.5);
 }
 
+
 void main() {
 	//discard if hires tile is loaded at that position
 	if (vDistance < 900.0 && texture(hiresTileMap.map, ((vWorldPosition.xz - hiresTileMap.translate) / hiresTileMap.scale - hiresTileMap.pos) / hiresTileMap.size + 0.5).r > 0.75) discard;
@@ -88,25 +90,27 @@ void main() {
 	float heightZ = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(0.0, 1.0))));
 	float diff = (height - heightX) + (height - heightZ);
 	vec3 defaultRGB = color.rgb + clamp(diff * 0.04, -0.2, 0.04);
-	vec3 occRGB = color.rgb + clamp(diff * 0.02, -0.1, 0.04);
 	
-	float ao = 0.0;
-	const float r = 3.0;
-	const float step = 0.2;
-	for (float vx = -r; vx <= r; vx++) {
-		for (float vz = -r; vz <= r; vz++) {
-			diff = height - metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(vx * step, vz * step))));
-			if (diff < 0.0) {
-				ao -= step / r;            
+	if(lod == 1) {
+		vec3 occRGB = color.rgb + clamp(diff * 0.02, -0.1, 0.04);
+		
+		float ao = 0.0;
+		const float r = 3.0;
+		const float step = 0.2;
+		for (float vx = -r; vx <= r; vx++) {
+			for (float vz = -r; vz <= r; vz++) {
+				diff = height - metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(vx * step, vz * step))));
+				if (diff < 0.0) {
+					ao -= step / r;            
+				}
 			}
 		}
+		occRGB += ao * 0.1;
+		
+		color.rgb = mix(defaultRGB, occRGB, smoothstep(PI_HALF + PI_D10, PI - PI_D10, acos(clamp(viewMatrix[1][1] - 1.0, -1.0, 0.0))));
+	} else {
+		color.rgb = defaultRGB;
 	}
-	occRGB += ao * 0.1;
-	
-	vec3 rgb = mix(defaultRGB, occRGB, smoothstep(PI_HALF + PI_D10, PI - PI_D10, acos(clamp(viewMatrix[1][1] - 1.0, -1.0, 0.0))));
-	
-	color.rgb = rgb;
-	
 	float blockLight = metaToLight(meta);
 	float light = mix(blockLight, 15.0, sunlightStrength);
 	color.rgb *= mix(ambientLight, 1.0, light / 15.0);
