@@ -173,10 +173,13 @@ export class MapControls {
         let maxAngleForZoom = this.getMaxPerspectiveAngleForDistance(this.manager.distance);
 
         // rotation
-        if (this.manager.ortho === 0) {
-            this.mouseRotate.update(delta, map);
-            this.keyRotate.update(delta, map);
-            this.touchRotate.update(delta, map);
+        this.mouseRotate.update(delta, map);
+        this.keyRotate.update(delta, map);
+        this.touchRotate.update(delta, map);
+
+        // snap rotation to north on orthographic view
+        if (this.manager.ortho !== 0 && Math.abs(this.manager.rotation) < 0.3) {
+            this.manager.rotation = softClamp(this.manager.rotation, 0, 0, 0.05);
         }
 
         // tilt

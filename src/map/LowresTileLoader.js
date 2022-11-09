@@ -85,6 +85,8 @@ export class LowresTileLoader {
                         return;
                     }
 
+                    const scale = Math.pow(this.tileSettings.lodFactor, this.lod - 1);
+
                     let material = new ShaderMaterial({
                         uniforms: {
                             ...this.uniforms,
@@ -98,7 +100,12 @@ export class LowresTileLoader {
                                 type: 't',
                                 value: texture
                             },
-                            lod: {value: this.lod}
+                            lod: {
+                                value: this.lod
+                            },
+                            lodScale: {
+                                value: scale
+                            }
                         },
                         vertexShader: this.vertexShader,
                         fragmentShader: this.fragmentShader,
@@ -112,7 +119,6 @@ export class LowresTileLoader {
 
                     let object = new Mesh(this.geometry, material);
 
-                    const scale = Math.pow(this.tileSettings.lodFactor, this.lod - 1);
                     object.position.set(tileX * this.tileSettings.tileSize.x * scale, 0, tileZ * this.tileSettings.tileSize.z * scale);
                     object.scale.set(scale, 1, scale);
 

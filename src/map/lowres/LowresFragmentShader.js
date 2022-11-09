@@ -28,8 +28,6 @@ export const LOWRES_FRAGMENT_SHADER = `
 ${ShaderChunk.logdepthbuf_pars_fragment}
 
 #define PI 3.1415926535897932
-#define PI_D10 0.3141592653589793
-#define PI_D5 0.6283185307179586
 
 #ifndef texture
 	#define texture texture2D
@@ -49,7 +47,8 @@ uniform TileMap hiresTileMap;
 uniform sampler2D textureImage;
 uniform vec2 tileSize;
 uniform vec2 textureSize;
-uniform int lod;
+uniform float lod;
+uniform float lodScale;
 
 varying vec3 vPosition;
 varying vec3 vWorldPosition;
@@ -88,29 +87,32 @@ void main() {
 	
 	float heightX = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(1.0, 0.0))));
 	float heightZ = metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(0.0, 1.0))));
-	float diff = (height - heightX) + (height - heightZ);
-	vec3 defaultRGB = color.rgb + clamp(diff * 0.04, -0.2, 0.04);
+	float heightDiff = ((height - heightX) + (height - heightZ)) / lodScale;
+	float shade = clamp(heightDiff * 0.06, -0.2, 0.04);
 	
-	if(lod == 1) {
-		vec3 occRGB = color.rgb + clamp(diff * 0.02, -0.1, 0.04);
+	float ao = 0.0;
+	float aoStrength = 0.0;
+	if(lod == 1.0) {
+		aoStrength = smoothstep(PI - 0.8, PI - 0.2, acos(-clamp(viewMatrix[1][2], 0.0, 1.0)));
+		aoStrength *= 1.0 - smoothstep(200.0, 500.0, vDistance);
 		
-		float ao = 0.0;
-		const float r = 3.0;
-		const float step = 0.2;
-		for (float vx = -r; vx <= r; vx++) {
-			for (float vz = -r; vz <= r; vz++) {
-				diff = height - metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(vx * step, vz * step))));
-				if (diff < 0.0) {
-					ao -= step / r;            
+		if (aoStrength > 0.0) { 
+			const float r = 3.0;
+			const float step = 0.2;
+			const float o = step / r * 0.1;
+			for (float vx = -r; vx <= r; vx++) {
+				for (float vz = -r; vz <= r; vz++) {
+					heightDiff = height - metaToHeight(texture(textureImage, posToMetaUV(vPosition.xz + vec2(vx * step, vz * step))));
+					if (heightDiff < 0.0) {
+						ao -= o;            
+					}
 				}
 			}
 		}
-		occRGB += ao * 0.1;
-		
-		color.rgb = mix(defaultRGB, occRGB, smoothstep(PI - PI_D5, PI - PI_D10, acos(-clamp(viewMatrix[1][2], 0.0, 1.0))));
-	} else {
-		color.rgb = defaultRGB;
 	}
+	
+	color.rgb += mix(shade, shade * 0.3 + ao, aoStrength);
+	
 	float blockLight = metaToLight(meta);
 	float light = mix(blockLight, 15.0, sunlightStrength);
 	color.rgb *= mix(ambientLight, 1.0, light / 15.0);
