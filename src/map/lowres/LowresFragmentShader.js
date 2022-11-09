@@ -94,7 +94,7 @@ void main() {
 	float aoStrength = 0.0;
 	if(lod == 1.0) {
 		aoStrength = smoothstep(PI - 0.8, PI - 0.2, acos(-clamp(viewMatrix[1][2], 0.0, 1.0)));
-		aoStrength *= 1.0 - smoothstep(200.0, 500.0, vDistance);
+		aoStrength *= 1.0 - smoothstep(300.0, 500.0, vDistance);
 		
 		if (aoStrength > 0.0) { 
 			const float r = 3.0;

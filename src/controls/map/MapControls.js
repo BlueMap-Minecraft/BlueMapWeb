@@ -177,9 +177,12 @@ export class MapControls {
         this.keyRotate.update(delta, map);
         this.touchRotate.update(delta, map);
 
+        const rotating = this.mouseRotate.moving || this.touchRotate.moving ||
+            this.keyRotate.left || this.keyRotate.right
+
         // snap rotation to north on orthographic view
-        if (this.manager.ortho !== 0 && Math.abs(this.manager.rotation) < 0.3) {
-            this.manager.rotation = softClamp(this.manager.rotation, 0, 0, 0.05);
+        if (this.manager.ortho !== 0 && Math.abs(this.manager.rotation) < (rotating ? 0.05 : 0.3)) {
+            this.manager.rotation = softClamp(this.manager.rotation, 0, 0, 0.1);
         }
 
         // tilt
