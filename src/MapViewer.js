@@ -322,8 +322,15 @@ export class MapViewer {
 					let scenePos = this.map.lowresTileManager[i].scene.position;
 					scenePos.x = -sX;
 					scenePos.z = -sZ;
+
+					if (i === 0) {
+						this.camera.far = cameraFar; // reset far clipping for the highest lowres lod to make depth-tests possible
+						this.camera.updateProjectionMatrix();
+					}
+
 					this.renderer.render(this.map.lowresTileManager[i].sceneParent, this.camera);
-					this.renderer.clearDepth();
+
+					if (i !== 0) this.renderer.clearDepth(); // clear depth-buffer for all lowres except the highest
 				}
 			}
 
