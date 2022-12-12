@@ -31,18 +31,20 @@ export class PlayerMarker extends Marker {
     /**
      * @param markerId {string}
      * @param playerUuid {string}
+     * @param playerHead {string}
      */
-    constructor(markerId, playerUuid) {
+    constructor(markerId, playerUuid, playerHead = "assets/steve.png") {
         super(markerId);
         Object.defineProperty(this, 'isPlayerMarker', {value: true});
         this.data.type = "player";
 
         this.data.playerUuid = playerUuid;
         this.data.name = playerUuid;
+        this.data.playerHead = playerHead;
 
         this.elementObject = new CSS2DObject(htmlToElement(`
 <div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}">
-    <img src="assets/playerheads/${this.data.playerUuid}.png" alt="playerhead" draggable="false">
+    <img src="${this.data.playerHead}" alt="playerhead" draggable="false">
     <div class="bm-player-name"></div>
 </div>
         `));

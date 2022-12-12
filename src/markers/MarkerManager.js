@@ -22,17 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-import {FileLoader, Scene} from "three";
+import {FileLoader} from "three";
 import {MarkerSet} from "./MarkerSet";
 import {alert, generateCacheHash} from "../util/Utils";
-import {PlayerMarkerSet} from "./PlayerMarkerSet";
-
-export const MarkerFileType = {
-    NORMAL: 1,
-    PLAYER: 2,
-}
-
-export const PLAYER_MARKER_SET_ID = "bm-players";
 
 /**
  * A manager for loading and updating markers from a file
@@ -43,15 +35,13 @@ export class MarkerManager {
      * @constructor
      * @param root {MarkerSet} - The scene to which all markers will be added
      * @param fileUrl {string} - The marker file from which this manager updates its markers
-     * @param fileType {number} - The type of the marker-file, see MarkerManager.NORMAL and MarkerManager.PLAYER
      * @param events {EventTarget}
      */
-    constructor(root, fileUrl, fileType, events = null) {
+    constructor(root, fileUrl, events = null) {
         Object.defineProperty(this, 'isMarkerManager', {value: true});
 
         this.root = root;
         this.fileUrl = fileUrl;
-        this.fileType = fileType;
         this.events = events;
         this.disposed = false;
 
@@ -97,59 +87,10 @@ export class MarkerManager {
     }
 
     /**
-     * @private
+     * @protected
      * @param markerData
      */
-    updateFromData(markerData) {
-        switch (this.fileType) {
-            case MarkerFileType.NORMAL: return this.updateFromDataNormal(markerData);
-            case MarkerFileType.PLAYER: return this.updateFromDataPlayer(markerData);
-        }
-    }
-
-    /**
-     * @private
-     * @param markerData
-     * @returns {boolean}
-     */
-    updateFromDataNormal(markerData) {
-        this.root.updateMarkerSetsFromData(markerData, [PLAYER_MARKER_SET_ID, "bm-popup-set"]);
-        return true;
-    }
-
-    /**
-     * @private
-     * @param markerFileData
-     * @returns {boolean}
-     */
-    updateFromDataPlayer(markerFileData) {
-        let playerMarkerSet = this.getPlayerMarkerSet();
-        return playerMarkerSet.updateFromPlayerData(markerFileData);
-    }
-
-    /**
-     * @private
-     * @returns {PlayerMarkerSet}
-     */
-    getPlayerMarkerSet() {
-        /** @type {PlayerMarkerSet} */
-        let playerMarkerSet = /** @type {PlayerMarkerSet} */ this.root.markerSets.get(PLAYER_MARKER_SET_ID);
-
-        if (!playerMarkerSet) {
-            playerMarkerSet = new PlayerMarkerSet(PLAYER_MARKER_SET_ID);
-            this.root.add(playerMarkerSet);
-        }
-
-        return playerMarkerSet;
-    }
-
-    /**
-     * @param playerUuid {string}
-     * @returns {PlayerMarker | undefined}
-     */
-    getPlayerMarker(playerUuid) {
-        return this.getPlayerMarkerSet().getPlayerMarker(playerUuid)
-    }
+    updateFromData(markerData) {}
 
     /**
      * Stops automatic-updates and disposes all markersets and markers managed by this manager

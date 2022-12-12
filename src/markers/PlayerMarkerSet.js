@@ -29,11 +29,13 @@ import {PlayerMarker} from "./PlayerMarker";
 
 export class PlayerMarkerSet extends MarkerSet {
 
-    constructor(id) {
+    constructor(id, playerheadsUrl) {
         super(id);
         this.data.label = "Player";
         this.data.toggleable = true;
         this.data.defaultHide = false;
+
+        this.data.playerheadsUrl = playerheadsUrl;
     }
 
     updateFromPlayerData(data) {
@@ -76,7 +78,7 @@ export class PlayerMarkerSet extends MarkerSet {
         // create new if not existent of wrong type
         if (!marker || !marker.isPlayerMarker) {
             if (marker) this.remove(marker);
-            marker = new PlayerMarker(markerId, playerUuid);
+            marker = new PlayerMarker(markerId, playerUuid, `${this.data.playerheadsUrl}${playerUuid}.png`);
             this.add(marker);
         }
 

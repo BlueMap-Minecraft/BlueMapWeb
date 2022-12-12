@@ -194,13 +194,7 @@ export class Map {
 	loadMapArea(x, z, hiresViewDistance, lowresViewDistance) {
 		if (!this.isLoaded) return;
 
-		const hiresX = Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x);
-		const hiresZ = Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z);
-		const hiresViewX = Math.floor(hiresViewDistance / this.data.hires.tileSize.x);
-		const hiresViewZ = Math.floor(hiresViewDistance / this.data.hires.tileSize.z);
-		this.hiresTileManager.loadAroundTile(hiresX, hiresZ, hiresViewX, hiresViewZ);
-
-		for (let i = 0; i < this.lowresTileManager.length; i++) {
+		for (let i = this.lowresTileManager.length - 1; i >= 0; i--) {
 			const lod = i + 1;
 			const scale = Math.pow(this.data.lowres.lodFactor, lod - 1);
 			const lowresX = Math.floor(x / (this.data.lowres.tileSize.x * scale));
@@ -209,6 +203,12 @@ export class Map {
 			const lowresViewZ = Math.floor(lowresViewDistance / this.data.lowres.tileSize.z);
 			this.lowresTileManager[i].loadAroundTile(lowresX, lowresZ, lowresViewX, lowresViewZ);
 		}
+
+		const hiresX = Math.floor((x - this.data.hires.translate.x) / this.data.hires.tileSize.x);
+		const hiresZ = Math.floor((z - this.data.hires.translate.z) / this.data.hires.tileSize.z);
+		const hiresViewX = Math.floor(hiresViewDistance / this.data.hires.tileSize.x);
+		const hiresViewZ = Math.floor(hiresViewDistance / this.data.hires.tileSize.z);
+		this.hiresTileManager.loadAroundTile(hiresX, hiresZ, hiresViewX, hiresViewZ);
 	}
 
     /**
