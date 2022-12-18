@@ -105,7 +105,7 @@ export class PlayerMarker extends Marker {
         if (!this.position.x && !this.position.y && !this.position.z) {
             this.position.set(
                 pos.x || 0,
-                pos.y || 0,
+                (pos.y || 0) + 1.8,
                 pos.z || 0
             );
         } else {

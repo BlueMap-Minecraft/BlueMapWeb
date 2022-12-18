@@ -38,6 +38,8 @@ export class HtmlMarker extends Marker {
 
         this.data.label = null;
 
+        this.data.classes = [];
+
         this.elementObject = new CSS2DObject(htmlToElement(`<div id="bm-marker-${this.data.id}" class="bm-marker-${this.data.type}"></div>`));
         this.elementObject.onBeforeRender = (renderer, scene, camera) => this.onBeforeRender(renderer, scene, camera);
 
@@ -93,6 +95,7 @@ export class HtmlMarker extends Marker {
      *      label: string,
      *      anchor: {x: number, y: number},
      *      html: string,
+     *      classes: string[],
      *      minDistance: number,
      *      maxDistance: number
      *      }}
@@ -116,6 +119,13 @@ export class HtmlMarker extends Marker {
         // update html
         if (this.element.innerHTML !== markerData.html){
             this.element.innerHTML = markerData.html;
+        }
+
+        // update style-classes
+        if (this.data.classes !== markerData.classes) {
+            this.data.classes = markerData.classes;
+            this.element.classList.value = `bm-marker-${this.data.type}`;
+            this.element.classList.add(...markerData.classes);
         }
 
         // update min/max distances

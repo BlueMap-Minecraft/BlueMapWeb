@@ -34,6 +34,8 @@ export class PoiMarker extends HtmlMarker {
         Object.defineProperty(this, 'isPoiMarker', {value: true});
         this.data.type = "poi";
 
+        this.data.detail = null;
+
         this.html = `<img src="" alt="POI Icon (${this.data.id})" class="bm-marker-poi-icon" draggable="false" style="pointer-events: auto"><div class="bm-marker-poi-label"></div>`;
 
         this.iconElement = this.element.getElementsByTagName("img").item(0);
@@ -87,7 +89,9 @@ export class PoiMarker extends HtmlMarker {
      *      anchor: {x: number, y: number},
      *      iconAnchor: {x: number, y: number},
      *      label: string,
+     *      detail: string,
      *      icon: string,
+     *      classes: string[],
      *      minDistance: number,
      *      maxDistance: number
      * }}
@@ -110,13 +114,28 @@ export class PoiMarker extends HtmlMarker {
         // update label
         if (this.data.label !== markerData.label){
             this.data.label = markerData.label || "";
-            this.labelElement.innerHTML = this.data.label || "";
+        }
+
+        // update detail
+        if (this.data.detail !== markerData.detail){
+            this.data.detail = markerData.detail || this.data.label;
+            this.labelElement.innerHTML = this.data.detail || "";
         }
 
         // update icon
         if (this._lastIcon !== markerData.icon){
             this.iconElement.src = markerData.icon || "assets/poi.svg";
             this._lastIcon = markerData.icon;
+        }
+
+        // update style-classes
+        if (this.data.classes !== markerData.classes) {
+            this.data.classes = markerData.classes;
+            let highlight = this.element.classList.contains("bm-marker-highlight");
+
+            this.element.classList.value = `bm-marker-html`;
+            if (highlight) this.element.classList.add("bm-marker-highlight");
+            this.element.classList.add(...markerData.classes);
         }
 
         // update min/max distances
